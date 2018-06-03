@@ -1,0 +1,75 @@
+#![feature(plugin, custom_derive)]
+#![plugin(rocket_codegen)]
+
+#[macro_use]
+extern crate serde_derive;
+extern crate serde_json;
+
+extern crate rocket;
+#[macro_use]
+extern crate rocket_contrib;
+extern crate rocket_cors;
+
+#[macro_use]
+extern crate diesel;
+
+extern crate validator;
+#[macro_use]
+extern crate validator_derive;
+
+extern crate crypto;
+extern crate dotenv;
+
+extern crate chrono;
+extern crate frank_jwt as jwt;
+
+extern crate rand;
+extern crate slug;
+
+mod db;
+mod schema;
+mod models;
+
+use rocket_contrib::{Json, Value};
+use rocket::request::Request;
+use rocket::response::{Response, Responder};
+use rocket::http::{Status, ContentType};
+use schema::users;
+use models::User;
+use diesel::prelude::*;
+
+#[error(404)]
+fn not_found() -> Json<Value> {
+    Json(json!({
+        "status": "error",
+        "reason": "Resource was not found."
+    }))
+}
+
+#[get("/user", format="application/json")]
+fn get_user(conn: db::Conn) -> Json<Value> {
+    use schema::users::dsl::{users as all_users};
+    use schema::users::dsl::*;
+    let  rs = all_users
+        .load::<User>(&*conn)
+        .expect("error retrieving users");
+    Json(json!(&rs))
+}
+
+fn main() {
+    let pool = db::init_pool();
+    rocket::ignite()
+        // mount the routes
+        .mount(
+            "/",
+            routes![
+                get_user,
+            ],
+        )
+        // plug the DB connection pool
+        .manage(pool)
+        // returns a 404 for URLs not mapped
+        .catch(errors![not_found])
+        // 🚀  Rocket has launched
+        .launch();
+}
