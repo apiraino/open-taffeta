@@ -1,3 +1,4 @@
+#![feature(rust_2018_preview)]
 #![feature(plugin, custom_derive)]
 #![plugin(rocket_codegen)]
 
@@ -30,7 +31,7 @@ mod models;
 mod schema;
 
 use diesel::prelude::*;
-use models::User;
+use crate::models::User;
 // use rocket::http::{ContentType, Status};
 // use rocket::request::Request;
 // use rocket::response::{Responder, Response};
@@ -47,7 +48,7 @@ fn not_found() -> Json<Value> {
 
 #[get("/user", format = "application/json")]
 fn get_user(conn: db::Conn) -> Json<Value> {
-    use schema::users::dsl::users as all_users;
+    use crate::schema::users::dsl::users as all_users;
     // use schema::users::dsl::*;
     let rs = all_users
         .load::<User>(&*conn)

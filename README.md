@@ -76,3 +76,7 @@ A: Yeah, we know, nothing you can do atm, just ignore it or mute with:
 RUSTFLAGS="-Aproc-macro-derive-resolution-fallback"
 ```
 ref: [https://github.com/rust-lang/rust/issues/50504#issuecomment-409609119](https://github.com/rust-lang/rust/issues/50504#issuecomment-409609119)
+
+Q: I want to test Rust 2018 preview, break all the things!
+
+A: Sure, why not. Apply [these changes](https://www.ncameron.org/blog/how-to-help-test-the-2018-edition/) and run `cargo run`. If it won't compile, try using [cargo fix](https://rust-lang-nursery.github.io/edition-guide/editions/transitioning.html) to (hopefully) automagically fix your code.
