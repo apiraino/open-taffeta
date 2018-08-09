@@ -54,6 +54,42 @@ The response should look like this JSON:
 }]
 ```
 
+### Endpoints
+
+- [] `/`: welcome and stuff
+- [] `/bell`: CRUD for bells (authenticated)
+- [] `/admin`: manage users (authenticated)
+- [x] `/users`: list of active guests (no auth, lol)
+- [] `POST /opendoor?id=1`: open the door (authenticated)
+  - request
+``` json
+{
+        "user": "komo",
+        "pass": 12345
+}
+```
+  - response 201
+```
+{
+        "msg": "opening door / doorbell not being rung"
+}
+```
+  - response 401
+```
+{
+        "msg": "auth failed"
+}
+```
+- [] `POST /ring?id=1`: a doorbell is being rung
+  - response 201
+```
+{
+    "doorbell_id": "123123",
+    "creation_ts": "1533849560"
+}
+```
+  - save doorbell_id,timestamp
+
 ### Check the SQLite file!
 
 `$ sqlite3 app.db`
