@@ -7,7 +7,7 @@ Install Rust
 
 `curl https://sh.rustup.rs -sSf | sh`
 
-Install nightly build (Rocket does not yet run on stable):
+Install nightly build (Rocket does not yet run on stable, see [Caveats](#caveats)):
 
 `cargo toolchain install nightly`
 
@@ -61,3 +61,18 @@ The response should look like this JSON:
 `sqlite> .tables;`
 
 `sqlite> select * from users`
+
+### Caveats
+
+`rocket` requires the rust `nightly` compiler (which is in flux by definition) and that gets a bit on the nerves to the `diesel` crate, so you may want to pin a working combo of a nightly version + `diesel` crate and carefully evaluate upgrades.
+
+Q: *There's a warning when I derive Queryable (or other), but my code compiles*
+```
+5 | derive ( Debug , Clone , Copy , QueryId , Default ) ] pub struct $ column_name
+  |                                 ^^^^^^^ names from parent modules are not accessible without an explicit import
+```
+A: Yeah, we know, nothing you can do atm, just ignore it or mute with:
+```
+RUSTFLAGS="-Aproc-macro-derive-resolution-fallback"
+```
+ref: [https://github.com/rust-lang/rust/issues/50504#issuecomment-409609119](https://github.com/rust-lang/rust/issues/50504#issuecomment-409609119)
