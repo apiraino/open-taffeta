@@ -6,16 +6,15 @@ extern crate serde_derive;
 extern crate serde_json;
 
 extern crate rocket;
+
+extern crate rocket_cors;
 #[macro_use]
 extern crate rocket_contrib;
-extern crate rocket_cors;
 
 #[macro_use]
 extern crate diesel;
 
 extern crate validator;
-#[macro_use]
-extern crate validator_derive;
 
 extern crate crypto;
 extern crate dotenv;
@@ -27,18 +26,18 @@ extern crate rand;
 extern crate slug;
 
 mod db;
-mod schema;
 mod models;
+mod schema;
 
-use rocket_contrib::{Json, Value};
-use rocket::request::Request;
-use rocket::response::{Response, Responder};
-use rocket::http::{Status, ContentType};
-use schema::users;
-use models::User;
 use diesel::prelude::*;
+use models::User;
+// use rocket::http::{ContentType, Status};
+// use rocket::request::Request;
+// use rocket::response::{Responder, Response};
+use rocket_contrib::{Json, Value};
+// use schema::users;
 
-#[error(404)]
+#[catch(404)]
 fn not_found() -> Json<Value> {
     Json(json!({
         "status": "error",
@@ -46,11 +45,11 @@ fn not_found() -> Json<Value> {
     }))
 }
 
-#[get("/user", format="application/json")]
+#[get("/user", format = "application/json")]
 fn get_user(conn: db::Conn) -> Json<Value> {
-    use schema::users::dsl::{users as all_users};
-    use schema::users::dsl::*;
-    let  rs = all_users
+    use schema::users::dsl::users as all_users;
+    // use schema::users::dsl::*;
+    let rs = all_users
         .load::<User>(&*conn)
         .expect("error retrieving users");
     Json(json!(&rs))
@@ -69,7 +68,7 @@ fn main() {
         // plug the DB connection pool
         .manage(pool)
         // returns a 404 for URLs not mapped
-        .catch(errors![not_found])
+        .catch(catchers![not_found])
         // 🚀  Rocket has launched
         .launch();
 }
