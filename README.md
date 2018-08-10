@@ -21,14 +21,16 @@ Install the ORM (Diesel) cli:
 
 `cargo install diesel_cli`
 
-Performs setup and install migrations:
+### Performs DB setup and migrations:
 
 `diesel setup`
 `diesel migration generate create_users`
 
+Write the SQL to create and drop table `users`.
+
 Run both migrations to check if they are ok:
 
-`diesel migration redo`
+`diesel migration run`
 
 ### Running the server
 
@@ -56,11 +58,15 @@ The response should look like this JSON:
 
 ### Endpoints
 
-- [] `/`: welcome and stuff
-- [] `/bell`: CRUD for bells (authenticated)
+
+All responses are `application/json`.
+
+- [x] `/`: welcome and stuff (response `text/html; charset=utf-8`)
+- [] `/door`: CRUD for doors (authenticated)
+- [] `/ring?door_id=1`: ring door id=1 (authenticated)
 - [] `/admin`: manage users (authenticated)
 - [x] `/users`: list of active guests (no auth, lol)
-- [] `POST /opendoor?id=1`: open the door (authenticated)
+- [] `POST /opendoor?id=1`: [from RPI] open the door with id=1 (authenticated)
   - request
 ``` json
 {
@@ -88,15 +94,15 @@ The response should look like this JSON:
     "creation_ts": "1533849560"
 }
 ```
-  - save doorbell_id,timestamp
+  - save doorbell_id,timestamp (after 30 secs delete ring)
 
 ### Check the SQLite file!
 
 `$ sqlite3 app.db`
 
-`sqlite> .tables;`
+`sqlite> .tables`
 
-`sqlite> select * from users`
+`sqlite> select * from users;`
 
 ### Caveats
 
