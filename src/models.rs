@@ -10,3 +10,10 @@ pub struct User {
     pub password: String,
     pub email: String,
 }
+
+#[derive(Queryable, Serialize, Deserialize)]
+pub struct Door {
+    pub id: i32,
+    pub name: String,
+    pub rung: bool,
+}

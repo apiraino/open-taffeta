@@ -30,8 +30,8 @@ mod db;
 mod models;
 mod schema;
 
-use diesel::prelude::*;
 use crate::models::User;
+use diesel::prelude::*;
 // use rocket::http::{ContentType, Status};
 // use rocket::request::Request;
 // use rocket::response::{Responder, Response};
@@ -56,6 +56,11 @@ fn get_user(conn: db::Conn) -> Json<Value> {
     Json(json!(&rs))
 }
 
+#[get("/")]
+fn get_blurb() -> &'static str {
+    "Welcome!"
+}
+
 fn main() {
     let pool = db::init_pool();
     rocket::ignite()
@@ -63,11 +68,11 @@ fn main() {
         .mount(
             "/",
             routes![
-                get_user,
-            ],
-        )
-        // plug the DB connection pool
-        .manage(pool)
+                get_blurb,
+                get_user
+            ]
+            // plug the DB connection pool
+        ).manage(pool)
         // returns a 404 for URLs not mapped
         .catch(catchers![not_found])
         // 🚀  Rocket has launched
