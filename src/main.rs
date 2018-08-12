@@ -29,10 +29,9 @@ extern crate slug;
 
 mod db;
 mod models;
+mod routes;
 mod schema;
 
-use crate::models::User;
-use diesel::prelude::*;
 // use rocket::http::{ContentType, Status};
 // use rocket::request::Request;
 // use rocket::response::{Responder, Response};
@@ -47,32 +46,13 @@ fn not_found() -> Json<Value> {
     }))
 }
 
-#[get("/user", format = "application/json")]
-fn get_user(conn: db::Conn) -> Json<Value> {
-    use crate::schema::users::dsl::users as all_users;
-    // use schema::users::dsl::*;
-    let rs = all_users
-        .load::<User>(&*conn)
-        .expect("error retrieving users");
-    Json(json!(&rs))
-}
-
-#[get("/")]
-fn get_blurb() -> &'static str {
-    "Welcome!"
-}
-
 fn main() {
     let pool = db::init_pool();
     rocket::ignite()
         // mount the routes
         .mount(
             "/",
-            routes![
-                get_blurb,
-                get_user
-            ]
-            // plug the DB connection pool
+            routes![routes::all::get_blurb, routes::all::get_user], // plug the DB connection pool
         ).manage(pool)
         // returns a 404 for URLs not mapped
         .catch(catchers![not_found])
