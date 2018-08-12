@@ -9,7 +9,7 @@ Install Rust
 
 Install nightly build (Rocket does not yet run on stable, see [Caveats](#caveats)):
 
-`cargo toolchain install nightly`
+`rustup toolchain install nightly`
 
 Install sources (in case you want to use linting tools like `racer` or RLS):
 
