@@ -1,4 +1,5 @@
 #![feature(rust_2018_preview)]
+#![allow(proc_macro_derive_resolution_fallback)]
 #![feature(plugin, custom_derive)]
 #![plugin(rocket_codegen)]
 
