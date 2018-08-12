@@ -1,11 +1,11 @@
 use std::ops::Deref;
 
-use diesel::sqlite::SqliteConnection;
 use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
+use diesel::sqlite::SqliteConnection;
 
 use rocket::http::Status;
 use rocket::request::{self, FromRequest};
-use rocket::{Request, State, Outcome};
+use rocket::{Outcome, Request, State};
 
 // This boilerplate here basically does two things:
 // - using r2d2 crate, it creates a pool of DB connections
@@ -38,7 +38,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for Conn {
         let pool = request.guard::<State<SqlitePool>>()?;
         match pool.get() {
             Ok(conn) => Outcome::Success(Conn(conn)),
-            Err(_) => Outcome::Failure((Status::ServiceUnavailable, ()))
+            Err(_) => Outcome::Failure((Status::ServiceUnavailable, ())),
         }
     }
 }
