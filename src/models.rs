@@ -9,11 +9,13 @@ pub struct User {
     pub username: String,
     pub password: String,
     pub email: String,
+    pub active: bool,
 }
 
-#[derive(Queryable, Serialize, Deserialize)]
+#[derive(Queryable, Serialize, Deserialize, Debug, Default)]
 pub struct Door {
     pub id: i32,
     pub name: String,
-    pub rung: bool,
+    pub ring: bool,
+    pub ring_ts: Option<i32>,
 }

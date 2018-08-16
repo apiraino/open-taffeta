@@ -1,7 +1,8 @@
 CREATE TABLE doors (
     id INTEGER PRIMARY KEY NOT NULL,
-    name VARCHAR NOT NULL,
-    rung BOOLEAN NOT NULL DEFAULT 'f'
+    name VARCHAR NOT NULL UNIQUE,
+    ring BOOLEAN NOT NULL DEFAULT 0,
+    ring_ts INTEGER
 );
 
-INSERT INTO doors (id, name, rung) VALUES (0, "front-door", 'f');
+INSERT INTO doors (name) VALUES ("front-door");

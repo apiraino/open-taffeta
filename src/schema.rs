@@ -1,8 +1,12 @@
+// TODO: investigate why it specifies again `id` as non_standard_primary_key, also two (id) conflicts
+// https://docs.diesel.rs/diesel/macro.table.html
+
 table! {
     doors (id) {
         id -> Integer,
         name -> Text,
-        rung -> Bool,
+        ring -> Bool,
+        ring_ts -> Nullable<Integer>,
     }
 }
 
@@ -12,6 +16,7 @@ table! {
         username -> Text,
         password -> Text,
         email -> Text,
+        active -> Bool,
     }
 }
 
