@@ -26,7 +26,7 @@ Install the ORM (Diesel) cli:
 `diesel setup`
 `diesel migration generate create_users`
 
-Write the SQL to create and drop table `users`.
+Write the SQL to create migrations (`up.sql` and `down.sql`)
 
 Run both migrations to check if they are ok:
 
@@ -62,22 +62,20 @@ The response should look like this JSON:
 All responses are `application/json`.
 
 - [x] `/`: welcome and stuff (response `text/html; charset=utf-8`)
-- [] `/door`: CRUD for doors (authenticated)
-- [] `/ring?door_id=1`: ring door id=1 (authenticated)
 - [] `/admin`: manage users (authenticated)
-- [x] `/users`: list of active guests (no auth, lol)
-- [] `POST /opendoor?id=1`: [from RPI] open the door with id=1 (authenticated)
+- [x] `/users?active=true`: list of (active) guests (no auth, lol)
+- [] `PUT /door/<id>`: ring (human) or open door (from RPI)  (authenticated?)
   - request
 ``` json
 {
-        "user": "komo",
-        "pass": 12345
+        "action": ['open', 'ring']
 }
 ```
+  - will save door_id+timestamp (after 30 secs delete "rung" will become false)
   - response 201
 ```
 {
-        "msg": "opening door / doorbell not being rung"
+        "msg": "opening / ringing door / doorbell not being rung"
 }
 ```
   - response 401
@@ -86,15 +84,16 @@ All responses are `application/json`.
         "msg": "auth failed"
 }
 ```
-- [] `POST /ring?id=1`: a doorbell is being rung
+- [] `POST /door`: CRUD for doors
   - response 201
 ```
 {
-    "doorbell_id": "123123",
+    "id": "123",
     "creation_ts": "1533849560"
 }
 ```
-  - save doorbell_id,timestamp (after 30 secs delete ring)
+- [] `DELETE /door/<id>`: delete a door
+  - response 204
 
 ### Check the SQLite file!
 
@@ -117,6 +116,11 @@ A: Yeah, we know, nothing you can do atm, just ignore it or mute with:
 ```
 RUSTFLAGS="-Aproc-macro-derive-resolution-fallback"
 ```
+or better:
+``` rust
+#[allow(proc_macro_derive_resolution_fallback)]
+```
+
 ref: [https://github.com/rust-lang/rust/issues/50504#issuecomment-409609119](https://github.com/rust-lang/rust/issues/50504#issuecomment-409609119)
 
 Q: I want to test Rust 2018 preview, break all the things!
