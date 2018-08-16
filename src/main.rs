@@ -2,6 +2,11 @@
 #![allow(proc_macro_derive_resolution_fallback)]
 #![feature(plugin, custom_derive)]
 #![plugin(rocket_codegen)]
+#![feature(custom_attribute)]
+
+// extern crate env_logger;
+// #[macro_use]
+// extern crate log;
 
 #[macro_use]
 extern crate serde_derive;
@@ -17,6 +22,8 @@ extern crate rocket_contrib;
 extern crate diesel;
 
 extern crate validator;
+#[macro_use]
+extern crate validator_derive;
 
 extern crate crypto;
 extern crate dotenv;
@@ -32,11 +39,7 @@ mod models;
 mod routes;
 mod schema;
 
-// use rocket::http::{ContentType, Status};
-// use rocket::request::Request;
-// use rocket::response::{Responder, Response};
 use rocket_contrib::{Json, Value};
-// use schema::users;
 
 #[catch(404)]
 fn not_found() -> Json<Value> {
@@ -47,12 +50,21 @@ fn not_found() -> Json<Value> {
 }
 
 fn main() {
+    // TODO: fix logging
+    // env_logger::init();
+
     let pool = db::init_pool();
     rocket::ignite()
         // mount the routes
         .mount(
             "/",
-            routes![routes::all::get_blurb, routes::all::get_user], // plug the DB connection pool
+            // plug the DB connection pool
+            routes![
+                routes::all::get_index,
+                routes::users::get_users,
+                routes::users::get_user,
+                routes::doors::create_door,
+            ],
         ).manage(pool)
         // returns a 404 for URLs not mapped
         .catch(catchers![not_found])
