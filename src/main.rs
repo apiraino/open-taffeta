@@ -39,7 +39,11 @@ mod models;
 mod routes;
 mod schema;
 
+use dotenv::dotenv;
 use rocket_contrib::{Json, Value};
+
+#[macro_use]
+extern crate dotenv_codegen;
 
 #[catch(404)]
 fn not_found() -> Json<Value> {
@@ -50,6 +54,9 @@ fn not_found() -> Json<Value> {
 }
 
 fn main() {
+    // sets env vars based on the `.env` file
+    dotenv().ok();
+
     // TODO: fix logging
     // env_logger::init();
 

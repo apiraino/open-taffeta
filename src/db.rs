@@ -13,10 +13,8 @@ use rocket::{Outcome, Request, State};
 
 pub type SqlitePool = Pool<ConnectionManager<SqliteConnection>>;
 
-pub const DATABASE_URL: &'static str = "app.db";
-
 pub fn init_pool() -> SqlitePool {
-    let manager = ConnectionManager::<SqliteConnection>::new(DATABASE_URL);
+    let manager = ConnectionManager::<SqliteConnection>::new(dotenv!("DATABASE_URL"));
     Pool::new(manager).expect("db pool")
 }
 

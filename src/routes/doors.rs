@@ -48,36 +48,44 @@ fn create_door(conn: db::Conn, door_data: Json<NewDoor>) -> Json<Value> {
 #[cfg(test)]
 mod tests {
     // use crate::db;
-    // use crate::models::Door;
+    use crate::models::Door;
     // use crate::schema::doors;
     #[allow(proc_macro_derive_resolution_fallback)]
     use diesel::prelude::*;
     use diesel::sqlite::Sqlite;
 
     // setup() and teardown() are arbitrary names
-    fn setup() {
-        // need anything here?
+    // file:///home/jman/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/share/doc/rust/html/book/2018-edition/ch11-03-test-organization.html#submodules-in-integration-tests
+    // #[cfg(feature = "sqlite")]
+    pub fn get_connection() -> SqliteConnection {
+        let database_url = dotenv!("DATABASE_URL");
+        SqliteConnection::establish(&database_url).unwrap()
     }
-    fn teardown() {
-        // undo what you've done in setup()
+
+    fn setup() -> SqliteConnection {
+        // use self::get_connection;
+        let conn = get_connection();
+        conn
     }
+
+    fn teardown() {}
 
     #[test]
     fn test_debug_sql() {
-        setup();
         use crate::schema::doors::dsl::*;
         let q = doors.filter(name.eq("front-door"));
         let sql = diesel::debug_query::<Sqlite, _>(&q).to_string();
         println!(">>> SQL: {:?}", sql);
-        teardown();
     }
 
     #[test]
     fn test_get_records() {
-        setup();
+        use crate::schema::doors::dsl::*;
+
+        let conn = setup();
         let doors_existing: Vec<Door> = doors
             .filter(name.eq("front-door"))
-            .load(&*conn)
+            .load(&conn)
             .expect(&format!("boom"));
         assert_eq!(1, doors_existing.len());
         teardown();
@@ -85,16 +93,17 @@ mod tests {
 
     #[test]
     fn test_count_records() {
-        setup();
         use crate::schema::doors::dsl::*;
 
+        let conn = setup();
         // select count: <diesel::sql_types::BigInt> -> returns an i64
         let door_count: i64 = doors
             .filter(name.eq("front-door"))
             .count()
-            .get_result(&*conn)
+            .get_result(&conn)
             .expect("boom");
         assert_eq!(1, door_count);
         teardown();
     }
+
 }
