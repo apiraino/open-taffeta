@@ -1,7 +1,7 @@
+#[allow(proc_macro_derive_resolution_fallback)]
 use crate::db;
 use crate::models::Door;
 use crate::schema::doors;
-#[allow(proc_macro_derive_resolution_fallback)]
 use diesel::prelude::*;
 use rocket_contrib::{Json, Value};
 use validator::Validate;
@@ -47,23 +47,18 @@ fn create_door(conn: db::Conn, door_data: Json<NewDoor>) -> Json<Value> {
 
 #[cfg(test)]
 mod tests {
-    // use crate::db;
     use crate::models::Door;
-    // use crate::schema::doors;
-    #[allow(proc_macro_derive_resolution_fallback)]
     use diesel::prelude::*;
     use diesel::sqlite::Sqlite;
 
     // setup() and teardown() are arbitrary names
-    // file:///home/jman/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/share/doc/rust/html/book/2018-edition/ch11-03-test-organization.html#submodules-in-integration-tests
-    // #[cfg(feature = "sqlite")]
+    // see: Rust Book - "Test Organization"
     pub fn get_connection() -> SqliteConnection {
         let database_url = dotenv!("DATABASE_URL");
         SqliteConnection::establish(&database_url).unwrap()
     }
 
     fn setup() -> SqliteConnection {
-        // use self::get_connection;
         let conn = get_connection();
         conn
     }
@@ -73,6 +68,7 @@ mod tests {
     #[test]
     fn test_debug_sql() {
         use crate::schema::doors::dsl::*;
+
         let q = doors.filter(name.eq("front-door"));
         let sql = diesel::debug_query::<Sqlite, _>(&q).to_string();
         println!(">>> SQL: {:?}", sql);

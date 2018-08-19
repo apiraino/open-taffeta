@@ -1,4 +1,5 @@
 #![feature(rust_2018_preview)]
+// workaround this: https://github.com/rust-lang/rust/issues/50504#issuecomment-412341631
 #![allow(proc_macro_derive_resolution_fallback)]
 #![feature(plugin, custom_derive)]
 #![plugin(rocket_codegen)]
@@ -9,29 +10,17 @@ extern crate dotenv_codegen;
 
 #[macro_use]
 extern crate serde_derive;
-extern crate serde_json;
 
 extern crate rocket;
 
-extern crate rocket_cors;
 #[macro_use]
 extern crate rocket_contrib;
 
 #[macro_use]
 extern crate diesel;
 
-extern crate validator;
 #[macro_use]
 extern crate validator_derive;
-
-extern crate crypto;
-extern crate dotenv;
-
-extern crate chrono;
-extern crate frank_jwt as jwt;
-
-extern crate rand;
-extern crate slug;
 
 mod db;
 mod models;
