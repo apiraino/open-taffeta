@@ -2,7 +2,9 @@
 use crate::db;
 use crate::models::Door;
 use crate::schema::doors;
+use crate::schema::doors::dsl::*;
 use diesel::prelude::*;
+use diesel::result::DatabaseErrorKind;
 use rocket_contrib::{Json, Value};
 use validator::Validate;
 
@@ -13,8 +15,6 @@ pub struct NewDoor {
     name: String,
 }
 
-use diesel::result::DatabaseErrorKind;
-
 // example Diesel usage
 // https://medium.com/sean3z/building-a-restful-crud-api-with-rust-1867308352d8
 
@@ -22,7 +22,7 @@ use diesel::result::DatabaseErrorKind;
 fn create_door(conn: db::Conn, door_data: Json<NewDoor>) -> Json<Value> {
     // Keep dsl imports in functions
     // https://gitter.im/diesel-rs/diesel?at=5b74459749932d4fe4e690b8
-    use crate::schema::doors::dsl::*;
+    // use crate::schema::doors::dsl::*;
     let new_door = NewDoor {
         name: door_data.name.clone(),
     };
