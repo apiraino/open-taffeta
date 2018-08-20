@@ -14,6 +14,7 @@ use rocket::{Outcome, Request, State};
 pub type SqlitePool = Pool<ConnectionManager<SqliteConnection>>;
 
 pub fn init_pool() -> SqlitePool {
+    // TODO: TEST_DATABASE_URL if integration tests
     let manager = ConnectionManager::<SqliteConnection>::new(dotenv!("DATABASE_URL"));
     Pool::new(manager).expect("db pool")
 }

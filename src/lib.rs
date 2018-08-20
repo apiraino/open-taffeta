@@ -23,7 +23,9 @@ extern crate diesel;
 extern crate validator_derive;
 
 mod db;
-mod models;
+// TODO: this is wrong, used only for tests
+pub mod models;
+pub mod responses;
 mod routes;
 mod schema;
 
@@ -38,11 +40,18 @@ pub fn runner() -> Result<rocket::Rocket, String> {
                 routes::all::get_index,
                 routes::users::get_users,
                 routes::users::get_user,
+                routes::users::signup_user,
+                routes::all::tester,
+                routes::all::tester_2,
+                routes::all::tester_3,
                 routes::doors::create_door,
             ],
         ).manage(pool)
-        // returns a 404 for URLs not mapped
-        .catch(catchers![routes::all::not_found]);
+        .catch(catchers![
+            // returns a 404 for URLs not mapped
+            routes::all::not_found,
+            // routes::all::bad_request
+        ]);
 
     Ok(rocket)
 }
