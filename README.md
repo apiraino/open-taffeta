@@ -32,6 +32,10 @@ Run both migrations to check if they are ok:
 
 `diesel migration run`
 
+### Running tests:
+
+Integration tests need the server running, so first launch `cargo run` in a shell and `cargo test` in another one.
+
 ### Running the server
 
 `cargo run`
@@ -58,10 +62,32 @@ The response should look like this JSON:
 
 ### Endpoints
 
-
 All responses are `application/json`.
 
 - [x] `/`: welcome and stuff (response `text/html; charset=utf-8`)
+- [x] `/signup`: user signup
+  - request
+``` json
+{
+        "username": "john",
+        "email": "hey@email.com",
+        "password": "123456"
+}
+```
+  - will create user with `active=true`
+  - response 201
+```
+{
+        "user": user_data
+}
+```
+  - response 400
+```
+{
+        "status": "error",
+        "detail": "error description"
+}
+```
 - [] `/admin`: manage users (authenticated)
 - [x] `/users?active=true`: list of (active) guests (no auth, lol)
 - [] `PUT /door/<id>`: ring (human) or open door (from RPI)  (authenticated?)
