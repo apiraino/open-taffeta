@@ -1,3 +1,4 @@
+use std::env;
 use std::ops::Deref;
 
 use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
@@ -14,8 +15,7 @@ use rocket::{Outcome, Request, State};
 pub type SqlitePool = Pool<ConnectionManager<SqliteConnection>>;
 
 pub fn init_pool() -> SqlitePool {
-    // TODO: TEST_DATABASE_URL if integration tests
-    let manager = ConnectionManager::<SqliteConnection>::new(dotenv!("DATABASE_URL"));
+    let manager = ConnectionManager::<SqliteConnection>::new(env::var("DATABASE_URL").unwrap());
     Pool::new(manager).expect("db pool")
 }
 

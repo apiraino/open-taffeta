@@ -6,9 +6,6 @@
 #![feature(custom_attribute)]
 
 #[macro_use]
-extern crate dotenv_codegen;
-
-#[macro_use]
 extern crate serde_derive;
 
 extern crate rocket;
