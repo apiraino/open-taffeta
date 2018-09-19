@@ -7,9 +7,11 @@ Install Rust
 
 `curl https://sh.rustup.rs -sSf | sh`
 
-Install nightly build (Rocket does not yet run on stable, see [Caveats](#caveats)):
-
-`rustup toolchain install nightly`
+Install a nightly build (Rocket does not yet run on stable, see [Caveats](#caveats)):
+``` bash
+$ rustup toolchain install nightly
+$ rustup override set nightly
+```
 
 Install sources (in case you want to use linting tools like `racer` or RLS):
 
@@ -23,8 +25,11 @@ Install the ORM (Diesel) cli:
 
 ### Performs DB setup and migrations:
 
-`diesel setup`
-`diesel migration generate create_users`
+``` bash
+$ sh env.sh <DEPLOY_MODE>
+$ diesel setup
+$ diesel migration generate create_users
+```
 
 Write the SQL to create migrations (`up.sql` and `down.sql`)
 
@@ -67,7 +72,7 @@ All responses are `application/json`.
 - [x] `/`: welcome and stuff (response `text/html; charset=utf-8`)
 - [x] `/signup`: user signup
   - request
-``` json
+```
 {
         "username": "john",
         "email": "hey@email.com",
@@ -92,7 +97,7 @@ All responses are `application/json`.
 - [x] `/users?active=true`: list of (active) guests (no auth, lol)
 - [] `PUT /door/<id>`: ring (human) or open door (from RPI)  (authenticated?)
   - request
-``` json
+```
 {
         "action": ['open', 'ring']
 }
@@ -131,14 +136,24 @@ All responses are `application/json`.
 
 ### Caveats
 
-`rocket` requires the rust `nightly` compiler (which is in flux by definition) and that gets a bit on the nerves to the `diesel` crate, so you may want to pin a working combo of a nightly version + `diesel` crate and carefully evaluate upgrades.
+`rocket` requires the rust `nightly` compiler (which is in flux by definition)
+and that gets a bit on the nerves to the `diesel` crate, so you may want to pin
+a working combo of a nightly version + `diesel` crate and carefully evaluate
+upgrades.
+
+Ensure using a nightly version that goes along with Rocket: check the [Travis CI
+config file](https://github.com/SergioBenitez/Rocket/blob/master/.travis.yml).
+
+For support on Rocket ensure to check the log of the [IRC #rocket channel](https://mozilla.logbot.info/rocket).
 
 Q: *There's a warning when I derive Queryable (or other), but my code compiles*
 ```
 5 | derive ( Debug , Clone , Copy , QueryId , Default ) ] pub struct $ column_name
   |                                 ^^^^^^^ names from parent modules are not accessible without an explicit import
 ```
-A: Yeah, we know, nothing you can do atm, just ignore it or mute with:
+A: Yeah, we know (see [this
+issue](https://github.com/rust-lang/rust/issues/50504#issuecomment-409609119)),
+nothing you can do atm, just ignore it or mute with:
 ```
 RUSTFLAGS="-Aproc-macro-derive-resolution-fallback"
 ```
@@ -146,8 +161,6 @@ or better:
 ``` rust
 #[allow(proc_macro_derive_resolution_fallback)]
 ```
-
-ref: [https://github.com/rust-lang/rust/issues/50504#issuecomment-409609119](https://github.com/rust-lang/rust/issues/50504#issuecomment-409609119)
 
 Q: I want to test Rust 2018 preview, break all the things!
 

@@ -12,9 +12,9 @@ name = "open_taffeta_bin"
 path = "src/main.rs"
 
 [dependencies]
-rocket = "0.3.15"
-rocket_codegen = "0.3.15"
-rocket_contrib = "0.3.15"
+rocket = "0.3.16"
+rocket_codegen = "0.3.16"
+rocket_contrib = "0.3.16"
 rocket_cors = "0.3.0"
 
 # validation for input struct deserialized

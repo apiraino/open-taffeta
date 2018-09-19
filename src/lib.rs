@@ -19,6 +19,8 @@ extern crate diesel;
 #[macro_use]
 extern crate validator_derive;
 
+extern crate validator;
+
 mod db;
 // TODO: this is wrong, used only for tests
 pub mod models;
