@@ -4,6 +4,10 @@ rust:
   - nightly-2018-09-18
 
 cache: cargo
+env:
+  - DATABASE_URL=test_app.db
+  - TEST_SERVER=http://localhost:8000
+  - DEPLOY_MODE=TEST
 
 before_script:
   - rustup component add rust-src
@@ -12,4 +16,4 @@ before_script:
 
 script:
   - cargo build --verbose --all
-  - cargo test --all
+  - cargo test --verbose --all
