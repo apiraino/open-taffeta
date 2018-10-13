@@ -10,6 +10,7 @@ env:
 before_script:
   - rustup component add rust-src
   - export RUST_SRC_PATH=`rustc --print sysroot`/lib/rustlib/src/rust/src
+  - diesel setup
 
 script:
   - cargo build --verbose --all
