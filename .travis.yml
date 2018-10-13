@@ -10,7 +10,6 @@ env:
 before_script:
   - rustup component add rust-src
   - export RUST_SRC_PATH=`rustc --print sysroot`/lib/rustlib/src/rust/src
-  - source env.sh TEST
 
 script:
   - cargo build --verbose --all
