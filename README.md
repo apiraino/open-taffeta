@@ -47,7 +47,7 @@ Integration tests need the server running, so first launch `cargo run` in a shel
 
 ### Testing the endpoint
 
-`curl "localhost:8000/user" -H "Content-Type: application/json"`
+`curl "localhost:8000/users" -H "Content-Type: application/json"`
 
 The response should look like this JSON:
 
