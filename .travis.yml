@@ -12,7 +12,7 @@ before_script:
   - export RUST_SRC_PATH=`rustc --print sysroot`/lib/rustlib/src/rust/src
   - cargo install diesel_cli --force --no-default-features --features=sqlite
   - diesel setup
-  - cargo run
+  - cargo run &
 
 script:
   - cargo build --verbose --all
