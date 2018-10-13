@@ -5,9 +5,7 @@ rust:
 
 cache: cargo
 env:
-  - DATABASE_URL=test_app.db
-  - TEST_SERVER=http://localhost:8000
-  - DEPLOY_MODE=TEST
+  - DATABASE_URL=test_app.db TEST_SERVER=http://localhost:8000 DEPLOY_MODE=TEST
 
 before_script:
   - rustup component add rust-src
