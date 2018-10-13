@@ -50,11 +50,10 @@ mod tests {
     use crate::models::Door;
     use diesel::prelude::*;
     use diesel::sqlite::Sqlite;
+    use std::env;
 
-    // setup() and teardown() are arbitrary names
-    // see: Rust Book - "Test Organization"
     pub fn get_connection() -> SqliteConnection {
-        let database_url = dotenv!("DATABASE_URL");
+        let database_url = env::var("DATABASE_URL").unwrap();
         SqliteConnection::establish(&database_url).unwrap()
     }
 

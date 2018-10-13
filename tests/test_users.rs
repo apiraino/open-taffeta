@@ -1,7 +1,7 @@
 extern crate open_taffeta_lib;
 
-#[macro_use]
-extern crate dotenv_codegen;
+extern crate reqwest;
+
 #[macro_use]
 extern crate serde_json;
 
@@ -16,8 +16,8 @@ mod common;
 #[test]
 fn test_list_users() {
     // TODO
-    // common::setup();
-    // common::teardown();
+    let client = common::setup();
+    common::teardown();
 
     let api_base_uri = common::api_base_url();
     let client = Client::new();

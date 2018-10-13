@@ -1,10 +1,12 @@
-use rand::distributions::Alphanumeric;
-use rand::{OsRng, Rng};
+extern crate rand;
+use common::rand::distributions::Alphanumeric;
+use common::rand::{OsRng, Rng};
+use std::env;
 
 use reqwest::Url;
 
 pub fn api_base_url() -> Url {
-    let server_base_url = dotenv!("TEST_SERVER");
+    let server_base_url = env::var("TEST_SERVER").unwrap();
     Url::parse(&server_base_url).unwrap()
 }
 
