@@ -39,7 +39,7 @@ Run both migrations to check if they are ok:
 
 ### Running tests:
 
-Integration tests need the server running, so first launch `cargo run` in a shell and `cargo test` in another one.
+Integration tests need the server running, so first launch `cargo run` in a shell and `cargo test --all` in another one.
 
 ### Running the server
 
@@ -68,14 +68,6 @@ The response should look like this JSON:
 ### Endpoints
 
 See [Wiki](https://github.com/apiraino/open-taffeta/wiki/Endpoints)
-
-### Check the SQLite file!
-
-`$ sqlite3 app.db`
-
-`sqlite> .tables`
-
-`sqlite> select * from users;`
 
 ### Caveats
 
