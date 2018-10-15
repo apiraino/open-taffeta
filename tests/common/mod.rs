@@ -5,6 +5,8 @@ use std::env;
 
 use reqwest::Url;
 
+pub mod dbstate;
+
 pub fn api_base_url() -> Url {
     let server_base_url = env::var("TEST_SERVER").unwrap();
     Url::parse(&server_base_url).unwrap()
@@ -47,7 +49,3 @@ pub fn signup_user(username: String, password: String) -> String {
     let user = format!("{}::{}::{}", username, password, generate_auth_token());
     user
 }
-
-pub fn setup() {}
-
-pub fn teardown() {}

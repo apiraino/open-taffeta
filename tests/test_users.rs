@@ -10,22 +10,32 @@ use reqwest::{Client, StatusCode};
 
 mod common;
 
+use common::dbstate::DbState;
+
 // TODO: have a look here
 // https://bitbucket.org/dorianpula/rookeries/src/master/tests/test_site_management.rs
 
 #[test]
 fn test_list_users() {
-    // TODO
-    let client = common::setup();
-    common::teardown();
+    use serde_json::Value;
+
+    let state = DbState::default();
+    // state.setup("josh@domain.com");
+    DbState::setup2("josh@domain.com");
+    println!(">>> done setup");
 
     let api_base_uri = common::api_base_url();
     let client = Client::new();
-    let response = client
+    let mut response = client
         .get(api_base_uri.join("/users").unwrap())
         .send()
         .unwrap();
     assert_eq!(response.status(), StatusCode::Ok);
+
+    let resp_str: &str = &response.text().unwrap().to_string();
+    let resp_data: Value = serde_json::from_str(resp_str).unwrap();
+    assert_eq!(resp_data["users"].as_array().unwrap().len(), 1);
+    assert_eq!(resp_data["users"][0]["email"], "josh@domain.com");
 }
 
 #[test]
