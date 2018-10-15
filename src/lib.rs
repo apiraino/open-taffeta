@@ -26,7 +26,8 @@ mod db;
 pub mod models;
 pub mod responses;
 mod routes;
-mod schema;
+// TODO: pub here is wrong, used only for tests
+pub mod schema;
 
 pub fn runner() -> Result<rocket::Rocket, String> {
     let pool = db::init_pool();

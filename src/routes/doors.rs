@@ -27,7 +27,7 @@ fn create_door(conn: db::Conn, door_data: Json<NewDoor>) -> Json<Value> {
         name: door_data.name.clone(),
     };
 
-    // TODO: also try `get_result()` her
+    // TODO: also try `get_result()` here
     // TODO: check all errors
     // https://docs.diesel.rs/diesel/result/enum.DatabaseErrorKind.html
     let insert_result = diesel::insert_into(doors).values(&new_door).execute(&*conn);
