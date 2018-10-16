@@ -19,7 +19,8 @@ use common::dbstate::DbState;
 #[test]
 fn test_list_users() {
     // DB is cleaned when drop is automatically inoked
-    DbState::default().setup("josh@domain.com");
+    let state = DbState::default();
+    state.setup("josh@domain.com");
     let api_base_uri = common::api_base_url();
     let client = Client::new();
     let mut response = client
@@ -72,7 +73,8 @@ fn test_signup_ok() {
     assert_eq!(resp_str.contains("record already exists"), true);
     // special case: I don't need a db at the beginning
     // but I need to clean it anyway at the end
-    DbState::default().teardown();
+    let state = DbState::default();
+    state.teardown();
 }
 
 #[test]
