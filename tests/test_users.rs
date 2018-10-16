@@ -4,6 +4,7 @@ extern crate reqwest;
 
 #[macro_use]
 extern crate serde_json;
+use serde_json::Value;
 
 use reqwest::header::Authorization;
 use reqwest::{Client, StatusCode};
@@ -17,13 +18,8 @@ use common::dbstate::DbState;
 
 #[test]
 fn test_list_users() {
-    use serde_json::Value;
-
     let state = DbState::default();
-    // state.setup("josh@domain.com");
-    DbState::setup2("josh@domain.com");
-    println!(">>> done setup");
-
+    state.setup("josh@domain.com");
     let api_base_uri = common::api_base_url();
     let client = Client::new();
     let mut response = client
@@ -31,7 +27,6 @@ fn test_list_users() {
         .send()
         .unwrap();
     assert_eq!(response.status(), StatusCode::Ok);
-
     let resp_str: &str = &response.text().unwrap().to_string();
     let resp_data: Value = serde_json::from_str(resp_str).unwrap();
     assert_eq!(resp_data["users"].as_array().unwrap().len(), 1);
@@ -40,9 +35,6 @@ fn test_list_users() {
 
 #[test]
 fn test_signup_ok() {
-    extern crate serde_json;
-    use serde_json::Value;
-
     let api_base_uri = common::api_base_url();
     let user_data = json!({
         "username": "john",
@@ -56,13 +48,13 @@ fn test_signup_ok() {
         .send()
         .unwrap();
     let resp_str: &str = &response.text().unwrap().to_string();
-    println!("STR {:?}", resp_str);
+    // println!("STR {:?}", resp_str);
     let resp_data: Value = serde_json::from_str(resp_str).unwrap();
     let user_data: Value = resp_data["user"].clone();
-    println!("JSON {:?}", user_data);
-    let resp_data2: open_taffeta_lib::models::User =
-        serde_json::from_value(user_data.clone()).unwrap();
-    println!("USER {:?}", resp_data2);
+    // println!("JSON {:?}", user_data);
+    // let resp_data2: open_taffeta_lib::models::User =
+    //     serde_json::from_value(user_data.clone()).unwrap();
+    // println!("USER {:?}", resp_data2);
     assert_eq!(response.status(), StatusCode::Created);
 
     let url = &format!("/user/{}", resp_data["user"]["id"]).to_string();
@@ -73,7 +65,7 @@ fn test_signup_ok() {
     assert_eq!(response.status(), StatusCode::Ok);
     let resp_str: &str = &response.text().unwrap().to_string();
     let resp_data: Value = serde_json::from_str(resp_str).unwrap();
-    println!("JSON2 {:?}", resp_data["user"][0]["id"]);
+    // println!("JSON2 {:?}", resp_data["user"][0]["id"]);
     assert_eq!(resp_data["user"][0]["id"], user_data["id"]);
 
     response = client
@@ -82,8 +74,10 @@ fn test_signup_ok() {
         .send()
         .unwrap();
     assert_eq!(response.status(), StatusCode::BadRequest);
-    // let resp_data: Value = serde_json::from_str(resp_str).unwrap();
-    assert_eq!(resp_str.contains("record already exists"), true)
+    let resp_str: &str = &response.text().unwrap().to_string();
+    assert_eq!(resp_str.contains("record already exists"), true);
+    let state = DbState::default();
+    state.teardown();
 }
 
 #[test]

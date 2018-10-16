@@ -12,8 +12,8 @@ use open_taffeta_lib::schema::users::dsl::*;
 #[derive(Default)]
 pub struct DbState;
 
-// warning "email" will collide with "open_taffeta_lib::schema::users::email" (duh)
-fn create_user(email_fld: &str) -> (User, String) {
+// warning: "email" will collide with "open_taffeta_lib::schema::users::email" (duh)
+pub fn create_user(email_fld: &str) -> (User, String) {
     let mut test_user = User::default();
     test_user.username = String::from("john");
     test_user.email = String::from(email_fld);
@@ -37,7 +37,7 @@ fn create_user(email_fld: &str) -> (User, String) {
     (test_user.clone(), test_user.password)
 }
 
-fn clean_db() {
+pub fn clean_db() {
     let database_url = env::var("DATABASE_URL").unwrap();
     let conn = SqliteConnection::establish(&database_url).unwrap();
     // TODO: truncate (if supported)
@@ -45,12 +45,14 @@ fn clean_db() {
         .expect("Cannot delete users");
 }
 
+
 impl DbState {
-    pub fn setup(self, email_fld: &str) -> (User, String) {
+    pub fn setup(&self, email_fld: &str) -> (User, String) {
         create_user(email_fld)
     }
-    pub fn setup2(email_fld: &str) -> (User, String) {
-        create_user(email_fld)
+
+    pub fn teardown(&self) {
+        clean_db();
     }
 }
 
