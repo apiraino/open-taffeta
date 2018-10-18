@@ -39,7 +39,7 @@ Run both migrations to check if they are ok:
 
 ### Running tests:
 
-Integration tests need the server running, so first launch `cargo run` in a shell and `cargo test --all` in another one.
+Integration tests need the server running, so first launch `cargo run` in a shell and `cargo test --all` in another one. Add `RUST_TEST_THREADS=1` if you want to run tests sequentially instead of parallelized (default).
 
 ### Running the server
 
