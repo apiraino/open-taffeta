@@ -1,6 +1,10 @@
 extern crate rand;
+extern crate crypto;
+
 use common::rand::distributions::Alphanumeric;
-use common::rand::{OsRng, Rng};
+use common::rand::{thread_rng, OsRng, Rng};
+use common::crypto::pbkdf2::pbkdf2_simple;
+
 use std::env;
 
 use reqwest::Url;
@@ -8,7 +12,10 @@ use reqwest::Url;
 pub mod dbstate;
 
 pub fn api_base_url() -> Url {
-    let server_base_url = env::var("TEST_SERVER").unwrap();
+    let server_base_url = match env::var("TEST_SERVER") {
+        Err(_) => "http://localhost:8080".to_string(),
+        Ok(uri) => uri,
+    };
     Url::parse(&server_base_url).unwrap()
 }
 
@@ -48,4 +55,10 @@ fn generate_auth_token() -> String {
 pub fn signup_user(username: String, password: String) -> String {
     let user = format!("{}::{}::{}", username, password, generate_auth_token());
     user
+}
+
+pub fn generate_password() -> String {
+    let password: String = thread_rng().sample_iter(&Alphanumeric).take(10).collect();
+    pbkdf2_simple(&password, 5000).unwrap()
+
 }
