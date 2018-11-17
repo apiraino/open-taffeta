@@ -12,34 +12,36 @@ name = "open_taffeta_bin"
 path = "src/main.rs"
 
 [dependencies]
-rocket = "0.3.16"
-rocket_codegen = "0.3.16"
-rocket_contrib = "0.3.16"
+rocket = "0.3.17"
+rocket_codegen = "0.3.17"
+rocket_contrib = "0.3.17"
 rocket_cors = "0.3.0"
 
 # validation for input struct deserialized
-validator = "0.7.1"
-validator_derive = "0.7.2"
+validator = "0.8.0"
+validator_derive = "0.8.0"
 
 # what are these for?
 rust-crypto = "0.2.36"
-frank_jwt = "3.0.0"
-slug = "0.1.3"
+# frank_jwt = "3.0.2"
+# workaround for https://github.com/GildedHonour/frank_jwt/issues/45
+frank_jwt = { git = "https://github.com/koala-kalda/frank_jwt", rev = "79f145469cf5f5b17e1e1f9d707bae82f3e02b0" }
+slug = "0.1.4"
 
 # ORM crates: diesel 1.3 breaks with nightly (as of end of May 2018)
 diesel = { version = "1.3.3", features = ["chrono", "sqlite", "r2d2"] }
 
-serde = "1.0.71"
-serde_derive = "1.0.71"
-serde_json = "1.0.24"
+serde = "1.0.80"
+serde_derive = "1.0.80"
+serde_json = "1.0.33"
 
-env_logger = "0.5.12"
-log = "0.4.3"
+env_logger = "0.6.0"
+log = "0.4.6"
 dotenv = "0.13.0"
 dotenv_codegen = "0.11.0"
-chrono = { version = "0.4.5", features = ["serde"] }
-reqwest = "0.8.8"
-rand = "0.5.5"
+chrono = { version = "0.4.6", features = ["serde"] }
+reqwest = "0.9.5"
+rand = "0.6.0"
 
 # https://vfoley.xyz/rust-compile-speed-tips/
 [profile.dev]
