@@ -69,7 +69,7 @@ fn signup_user(conn: db::Conn, user_data: Json<NewUser>) -> APIResponse {
 
     let res = new_user.validate();
     if res.is_err() {
-        let errs = res.unwrap_err().inner();
+        let errs = res.unwrap_err();
         let err_msg = format!("Data validation error: {:#?}", errs);
         println!("{:?}", err_msg);
         let resp_data = json!({

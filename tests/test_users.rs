@@ -6,7 +6,7 @@ extern crate reqwest;
 extern crate serde_json;
 use serde_json::Value;
 
-use reqwest::header::Authorization;
+use reqwest::header::HeaderValue;
 use reqwest::{Client, StatusCode};
 
 mod common;
@@ -47,7 +47,7 @@ fn test_create_user() {
         .get(api_base_uri.join(url).unwrap())
         .send()
         .unwrap();
-    assert_eq!(response.status(), StatusCode::Ok);
+    assert_eq!(response.status(), StatusCode::OK);
     let resp_str: &str = &response.text().unwrap().to_string();
     let resp_data: Value = serde_json::from_str(resp_str).unwrap();
     assert_eq!(resp_data["user"].as_array().unwrap().len(), 1);
@@ -63,7 +63,7 @@ fn test_list_users() {
         .get(api_base_uri.join("/users").unwrap())
         .send()
         .unwrap();
-    assert_eq!(response.status(), StatusCode::Ok);
+    assert_eq!(response.status(), StatusCode::OK);
     let resp_str: &str = &response.text().unwrap().to_string();
     let resp_data: Value = serde_json::from_str(resp_str).unwrap();
     assert_eq!(resp_data["users"].as_array().unwrap().len(), 0);
@@ -88,14 +88,14 @@ fn test_signup_ok() {
     let resp_str: &str = &response.text().unwrap().to_string();
     let resp_data: Value = serde_json::from_str(resp_str).unwrap();
     let user_data: Value = resp_data["user"].clone();
-    assert_eq!(response.status(), StatusCode::Created);
+    assert_eq!(response.status(), StatusCode::CREATED);
 
     let url = &format!("/user/{}", resp_data["user"]["id"]).to_string();
     response = client
         .get(api_base_uri.join(url).unwrap())
         .send()
         .expect("thought it worked...");
-    assert_eq!(response.status(), StatusCode::Ok);
+    assert_eq!(response.status(), StatusCode::OK);
     let resp_str: &str = &response.text().unwrap().to_string();
     let resp_data: Value = serde_json::from_str(resp_str).unwrap();
     assert_eq!(resp_data["user"][0]["id"], user_data["id"]);
@@ -105,7 +105,7 @@ fn test_signup_ok() {
         .json(&user_data)
         .send()
         .unwrap();
-    assert_eq!(response.status(), StatusCode::BadRequest);
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
     let resp_str: &str = &response.text().unwrap().to_string();
     assert_eq!(resp_str.contains("record already exists"), true);
 }
@@ -119,8 +119,8 @@ fn test_bad_auth() {
     let response = client
         .post(api_base_uri.join("/door").unwrap())
         .json(&payload)
-        .header(Authorization("hahaha".to_string()))
+        .header("Authorization", HeaderValue::from_static("hahaha"))
         .send()
         .unwrap();
-    assert_eq!(response.status(), StatusCode::Unauthorized);
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
