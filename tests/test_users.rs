@@ -110,7 +110,7 @@ fn test_signup_ok() {
     assert_eq!(resp_str.contains("record already exists"), true);
 }
 
-// #[test]
+#[test]
 fn test_bad_auth() {
     DbState::new();
     let api_base_uri = common::api_base_url();
