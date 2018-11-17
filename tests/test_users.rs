@@ -33,7 +33,7 @@ fn test_create_user() {
         .get(api_base_uri.join("/users").unwrap())
         .send()
         .unwrap();
-    assert_eq!(response.status(), StatusCode::Ok);
+    assert_eq!(response.status(), StatusCode::OK);
     let resp_str: &str = &response.text().unwrap().to_string();
     let resp_data: Value = serde_json::from_str(resp_str).unwrap();
     assert_eq!(resp_data["users"].as_array().unwrap().len(), 0);
