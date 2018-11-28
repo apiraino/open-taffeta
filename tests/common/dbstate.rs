@@ -51,7 +51,7 @@ impl DbState {
         (user, test_password)
     }
 
-    pub fn clean_db(&self) {
+    pub fn clean_users(&self) {
         // TODO: truncate (if supported)
         diesel::delete(users).execute(&self.conn)
             .expect("Cannot delete users");
@@ -61,6 +61,6 @@ impl DbState {
 
 impl Drop for DbState {
     fn drop(&mut self) {
-        self.clean_db();
+        self.clean_users();
     }
 }

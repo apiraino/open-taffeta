@@ -25,6 +25,7 @@ fn test_db() {
 #[test]
 fn test_create_user() {
     let state = DbState::new();
+    state.clean_users();
     let api_base_uri = common::api_base_url();
     let client = Client::new();
 
@@ -72,7 +73,6 @@ fn test_list_users() {
 #[test]
 fn test_signup_ok() {
     DbState::new();
-    // state.create_user("josh@domain.com");
     let api_base_uri = common::api_base_url();
     let user_data = json!({
         "username": "john",
@@ -87,10 +87,11 @@ fn test_signup_ok() {
         .unwrap();
     let resp_str: &str = &response.text().unwrap().to_string();
     let resp_data: Value = serde_json::from_str(resp_str).unwrap();
-    let user_data: Value = resp_data["user"].clone();
+    let resp_user_data: Value = resp_data["user"].clone();
     assert_eq!(response.status(), StatusCode::CREATED);
+    let user_id = resp_user_data["id"].as_i64().unwrap() as i32;
 
-    let url = &format!("/user/{}", resp_data["user"]["id"]).to_string();
+    let url = &format!("/user/{}", user_id);
     response = client
         .get(api_base_uri.join(url).unwrap())
         .send()
@@ -98,8 +99,9 @@ fn test_signup_ok() {
     assert_eq!(response.status(), StatusCode::OK);
     let resp_str: &str = &response.text().unwrap().to_string();
     let resp_data: Value = serde_json::from_str(resp_str).unwrap();
-    assert_eq!(resp_data["user"][0]["id"], user_data["id"]);
+    assert_eq!(resp_data["user"][0]["id"], user_id);
 
+    // repeat same payload, expect a 400
     response = client
         .post(api_base_uri.join("/signup").unwrap())
         .json(&user_data)
@@ -108,19 +110,4 @@ fn test_signup_ok() {
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
     let resp_str: &str = &response.text().unwrap().to_string();
     assert_eq!(resp_str.contains("record already exists"), true);
-}
-
-#[test]
-fn test_bad_auth() {
-    DbState::new();
-    let api_base_uri = common::api_base_url();
-    let client = Client::new();
-    let payload = json!({"name":"door123"});
-    let response = client
-        .post(api_base_uri.join("/door").unwrap())
-        .json(&payload)
-        .header("Authorization", HeaderValue::from_static("hahaha"))
-        .send()
-        .unwrap();
-    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
