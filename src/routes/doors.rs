@@ -3,10 +3,12 @@ use crate::db;
 use crate::models::Door;
 use crate::schema::doors;
 use crate::schema::doors::dsl::*;
+use crate::responses::{bad_request, created, unauthorized, APIResponse};
 use diesel::prelude::*;
 use diesel::result::DatabaseErrorKind;
 use rocket_contrib::{Json, Value};
 use validator::Validate;
+use auth::Auth;
 
 #[derive(Serialize, Deserialize, Validate, Debug, Insertable)]
 #[table_name = "doors"]
@@ -19,10 +21,21 @@ pub struct NewDoor {
 // https://medium.com/sean3z/building-a-restful-crud-api-with-rust-1867308352d8
 
 #[post("/door", data = "<door_data>", format = "application/json")]
-fn create_door(conn: db::Conn, door_data: Json<NewDoor>) -> Json<Value> {
+fn create_door(conn: db::Conn, auth: Option<Auth>, door_data: Json<NewDoor>) -> APIResponse {
     // Keep dsl imports in functions
     // https://gitter.im/diesel-rs/diesel?at=5b74459749932d4fe4e690b8
     // use crate::schema::doors::dsl::*;
+
+    // TODO: see if we can handle auth errors in auth.rs
+    if let None = auth.map(|auth| auth.id) {
+        let err_msg = format!("Auth failed");
+        let resp_data = json!({
+            "status":"error",
+            "detail": err_msg
+        });
+        return unauthorized().data(resp_data);
+    }
+
     let new_door = NewDoor {
         name: door_data.name.clone(),
     };
@@ -42,7 +55,8 @@ fn create_door(conn: db::Conn, door_data: Json<NewDoor>) -> Json<Value> {
         .filter(name.eq(&new_door.name))
         .first(&*conn)
         .expect(&format!("error getting doors with name={}", new_door.name));
-    Json(json!({ "door": door }))
+    let resp_data = json!({ "door": door });
+    created().data(resp_data)
 }
 
 #[cfg(test)]
@@ -61,8 +75,6 @@ mod tests {
         let conn = get_connection();
         conn
     }
-
-    fn teardown() {}
 
     #[test]
     fn test_debug_sql() {
@@ -83,7 +95,6 @@ mod tests {
             .load(&conn)
             .expect(&format!("boom"));
         assert_eq!(1, doors_existing.len());
-        teardown();
     }
 
     #[test]
@@ -98,7 +109,6 @@ mod tests {
             .get_result(&conn)
             .expect("boom");
         assert_eq!(1, door_count);
-        teardown();
     }
 
 }

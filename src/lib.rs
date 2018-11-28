@@ -21,6 +21,8 @@ extern crate validator_derive;
 
 extern crate validator;
 
+extern crate chrono;
+
 mod db;
 // TODO: this is wrong, used only for tests
 pub mod models;
@@ -28,6 +30,8 @@ pub mod responses;
 mod routes;
 // TODO: pub here is wrong, used only for tests
 pub mod schema;
+mod auth;
+mod config;
 
 pub fn runner() -> Result<rocket::Rocket, String> {
     let pool = db::init_pool();

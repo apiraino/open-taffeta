@@ -112,9 +112,8 @@ fn signup_user(conn: db::Conn, user_data: Json<NewUser>) -> APIResponse {
                     new_user.username
                 ));
 
-            let msg = format!("User created: {:?}", user);
-            println!("{:?}", msg);
-            let resp_data = json!({ "user": user });
+            let user_auth = user.to_user_auth();
+            let resp_data = json!({ "user": user_auth });
             created().data(resp_data)
         }
     }
