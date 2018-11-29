@@ -6,7 +6,6 @@ use rocket::http::Status;
 
 use config;
 
-
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Auth {
     /// timestamp

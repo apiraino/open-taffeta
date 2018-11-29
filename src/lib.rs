@@ -31,6 +31,8 @@ mod routes;
 // TODO: pub here is wrong, used only for tests
 pub mod schema;
 mod auth;
+
+#[macro_use]
 mod config;
 
 pub fn runner() -> Result<rocket::Rocket, String> {
