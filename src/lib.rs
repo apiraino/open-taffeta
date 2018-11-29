@@ -23,6 +23,11 @@ extern crate validator;
 
 extern crate chrono;
 
+// ensure macros are imported *before*
+// any modules that might use them
+#[macro_use]
+mod config;
+
 mod db;
 // TODO: this is wrong, used only for tests
 pub mod models;
@@ -31,9 +36,6 @@ mod routes;
 // TODO: pub here is wrong, used only for tests
 pub mod schema;
 mod auth;
-
-#[macro_use]
-mod config;
 
 pub fn runner() -> Result<rocket::Rocket, String> {
     let pool = db::init_pool();

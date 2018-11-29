@@ -10,9 +10,6 @@ use chrono::{Duration, Utc};
 use schema::users;
 use auth::Auth;
 
-#[macro_use]
-use config;
-
 #[derive(Queryable, Clone, Serialize, Deserialize, Debug, Default, Insertable)]
 pub struct User {
     pub id: i32,
@@ -52,7 +49,6 @@ pub struct UserAuth<'a> {
 
 impl User {
     pub fn to_user_auth(&self) -> UserAuth {
-        // let exp = Utc::now() + Duration::days(60);
         let exp = get_token_duration!();
         let token = Auth {
             id: self.id,
