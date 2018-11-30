@@ -30,3 +30,19 @@ fn test_bad_auth() {
         .unwrap();
     assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
+
+#[test]
+fn test_create() {
+    DbState::new();
+    let api_base_uri = common::api_base_url();
+    let (_, token) = common::signup_user("josh", "josh@domain.com");
+    let client = Client::new();
+    let payload = json!({"name":"door123"});
+    let response = client
+        .post(api_base_uri.join("/door").unwrap())
+        .json(&payload)
+        .header(AUTHORIZATION, HeaderValue::from_str(token.as_str()).unwrap())
+        .send()
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::CREATED);
+}
