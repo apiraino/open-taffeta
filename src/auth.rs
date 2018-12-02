@@ -28,16 +28,21 @@ impl Auth {
     }
 }
 
+#[derive(Debug)]
+pub enum ApiKeyError {
+    BadCount,
+    Missing,
+    Invalid,
+}
+
 impl<'a, 'r> FromRequest<'a, 'r> for Auth {
-    type Error = ();
-    fn from_request(request: &'a Request<'r>) -> request::Outcome<Auth, ()> {
+    type Error = ApiKeyError;
+
+    fn from_request(request: &'a Request<'r>) -> request::Outcome<Auth, Self::Error> {
         if let Some(auth) = extract_auth_from_request(request) {
             Outcome::Success(auth)
         } else {
-            // TODO: possible to break request handling here
-            // and return 401 to client?
-            Outcome::Failure((Status::Unauthorized, ()))
-            // Outcome::Forward(())
+            Outcome::Failure((Status::Unauthorized, ApiKeyError::Missing))
         }
     }
 }

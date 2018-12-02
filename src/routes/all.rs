@@ -11,6 +11,14 @@ fn not_found() -> Json<Value> {
     }))
 }
 
+#[catch(401)]
+fn not_authorized() -> Json<Value> {
+    Json(json!({
+        "status": "error",
+        "reason": "Not authorized."
+    }))
+}
+
 #[get("/")]
 fn get_index() -> &'static str {
     "Welcome!"

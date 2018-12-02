@@ -58,6 +58,7 @@ pub fn runner() -> Result<rocket::Rocket, String> {
         .catch(catchers![
             // returns a 404 for URLs not mapped
             routes::all::not_found,
+            routes::all::not_authorized,
             // routes::all::bad_request
         ]);
 

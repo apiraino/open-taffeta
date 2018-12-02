@@ -21,20 +21,10 @@ pub struct NewDoor {
 // https://medium.com/sean3z/building-a-restful-crud-api-with-rust-1867308352d8
 
 #[post("/door", data = "<door_data>", format = "application/json")]
-fn create_door(conn: db::Conn, auth: Option<Auth>, door_data: Json<NewDoor>) -> APIResponse {
+fn create_door(conn: db::Conn, auth: Auth, door_data: Json<NewDoor>) -> APIResponse {
     // Keep dsl imports in functions
     // https://gitter.im/diesel-rs/diesel?at=5b74459749932d4fe4e690b8
     // use crate::schema::doors::dsl::*;
-
-    // TODO: see if we can handle auth errors in auth.rs
-    if let None = auth.map(|auth| auth.id) {
-        let err_msg = format!("Auth failed");
-        let resp_data = json!({
-            "status":"error",
-            "detail": err_msg
-        });
-        return unauthorized().data(resp_data);
-    }
 
     let new_door = NewDoor {
         name: door_data.name.clone(),
