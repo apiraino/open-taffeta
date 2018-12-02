@@ -1,9 +1,9 @@
-// extern crate chrono;
-// use chrono::{Duration, Utc};
+// TODO: Load from env
+// https://rocket.rs/v0.4/guide/configuration/
 
-pub const SECRET : &'static str = "?qf3PjT9vrui`U:)i|@g";
+// openssl rand -base64 32
+pub const SECRET : &'static str = "Bgi/R1Lrznre9MINinMAXSaIVCXKSE+efLFFkx6dfPQ=";
 
-// pub const TOKEN_DURATION : DateTime<Utc> = Utc::now() + Duration::days(60);
 #[macro_export]
 macro_rules! get_token_duration {
     () => {

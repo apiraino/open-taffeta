@@ -23,7 +23,7 @@ extern crate validator;
 
 extern crate chrono;
 
-// ensure macros are imported *before*
+// ensure macros are imported before
 // any modules that might use them
 #[macro_use]
 mod config;

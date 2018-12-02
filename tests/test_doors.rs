@@ -22,13 +22,16 @@ fn test_bad_auth() {
     let api_base_uri = common::api_base_url();
     let client = Client::new();
     let payload = json!({"name":"door123"});
-    let response = client
+    let mut response = client
         .post(api_base_uri.join("/door").unwrap())
         .json(&payload)
         .header(AUTHORIZATION, HeaderValue::from_static("hahaha"))
         .send()
         .unwrap();
     assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    let resp_str: &str = &response.text().unwrap().to_string();
+    assert_eq!(resp_str.contains("Not authorized"), true);
+
 }
 
 #[test]

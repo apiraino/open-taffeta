@@ -71,7 +71,7 @@ fn test_list_users() {
 }
 
 #[test]
-fn test_signup_ok() {
+fn test_signup() {
     DbState::new();
     let api_base_uri = common::api_base_url();
     let user_data = json!({
