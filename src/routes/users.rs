@@ -49,13 +49,13 @@ pub fn validate_pwd_strength(pwd: &str) -> Result<(), ValidationError> {
 }
 
 #[get("/users", format = "application/json")]
-pub fn get_users(conn: db::Conn, auth: Auth) -> JsonValue {
+pub fn get_users(conn: db::Conn, _auth: Auth) -> JsonValue {
     let users_rs = users.load::<User>(&*conn).expect("error retrieving users");
     json!({ "users": users_rs })
 }
 
 #[get("/user/<user_id>", format = "application/json")]
-pub fn get_user(conn: db::Conn, auth: Auth, user_id: i32) -> JsonValue {
+pub fn get_user(conn: db::Conn, _auth: Auth, user_id: i32) -> JsonValue {
     let user: Vec<User> = users
         .filter(active.eq(true))
         .filter(id.eq(user_id))

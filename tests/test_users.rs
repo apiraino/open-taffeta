@@ -3,7 +3,6 @@ extern crate open_taffeta_lib;
 extern crate reqwest;
 
 #[macro_use] extern crate serde_json;
-use serde_json::Value;
 
 use reqwest::header::{AUTHORIZATION, HeaderValue};
 use reqwest::{Client, StatusCode};

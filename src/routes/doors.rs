@@ -2,6 +2,8 @@
 use crate::db;
 use crate::models::Door;
 use crate::schema::doors;
+// If a module manages more tables, keep dsl imports in functions
+// https://gitter.im/diesel-rs/diesel?at=5b74459749932d4fe4e690b8
 use crate::schema::doors::dsl::*;
 use crate::responses::{created, APIResponse};
 use diesel::prelude::*;
@@ -24,11 +26,7 @@ pub struct NewDoor {
 // https://medium.com/sean3z/building-a-restful-crud-api-with-rust-1867308352d8
 
 #[post("/door", data = "<door_data>", format = "application/json")]
-pub fn create_door(conn: db::Conn, auth: Auth, door_data: Json<NewDoor>) -> APIResponse {
-    // Keep dsl imports in functions
-    // https://gitter.im/diesel-rs/diesel?at=5b74459749932d4fe4e690b8
-    // use crate::schema::doors::dsl::*;
-
+pub fn create_door(conn: db::Conn, _auth: Auth, door_data: Json<NewDoor>) -> APIResponse {
     let new_door = NewDoor {
         name: door_data.name.clone(),
     };
@@ -53,13 +51,13 @@ pub fn create_door(conn: db::Conn, auth: Auth, door_data: Json<NewDoor>) -> APIR
 }
 
 #[get("/doors", format = "application/json")]
-pub fn get_doors(conn: db::Conn, auth: Auth) -> JsonValue {
+pub fn get_doors(conn: db::Conn, _auth: Auth) -> JsonValue {
     let doors_rs = doors.load::<Door>(&*conn).expect("error retrieving doors");
     json!({ "doors": doors_rs })
 }
 
 #[get("/door/<door_id>", format = "application/json")]
-pub fn get_door(conn: db::Conn, auth: Auth, door_id: i32) -> JsonValue {
+pub fn get_door(conn: db::Conn, _auth: Auth, door_id: i32) -> JsonValue {
     let door: Vec<Door> = doors
         .filter(id.eq(door_id))
         .load(&*conn)
@@ -69,7 +67,6 @@ pub fn get_door(conn: db::Conn, auth: Auth, door_id: i32) -> JsonValue {
 
 #[cfg(test)]
 mod tests {
-    use crate::models::Door;
     use crate::routes::doors::NewDoor;
     use crate::schema::doors::dsl::*;
     use diesel::prelude::*;
@@ -85,7 +82,11 @@ mod tests {
         let new_door = NewDoor {
             name: String::from("test-door")
         };
-        diesel::insert_into(doors).values(&new_door).execute(conn);
+        let res = diesel::insert_into(doors).values(&new_door).execute(conn);
+        match res {
+            Err(err) => panic!("[test] Insert into doors failed: {:?}", err),
+            Ok(_) => {}
+        }
     }
 
     fn setup() -> SqliteConnection {
@@ -94,6 +95,9 @@ mod tests {
 
     #[test]
     fn test_debug_sql() {
+        let conn = setup();
+        add_test_door(&conn);
+
         let q = doors.filter(name.eq("front-door"));
         let sql = diesel::debug_query::<Sqlite, _>(&q).to_string();
         println!(">>> SQL: {:?}", sql);
