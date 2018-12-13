@@ -1,27 +1,15 @@
-#![feature(rust_2018_preview)]
+// #![feature(rust_2018_preview)]
 // workaround this: https://github.com/rust-lang/rust/issues/50504#issuecomment-412341631
 #![allow(proc_macro_derive_resolution_fallback)]
-#![feature(plugin, custom_derive)]
-#![plugin(rocket_codegen)]
+#![feature(plugin)]
 #![feature(custom_attribute)]
+#![feature(proc_macro_hygiene, decl_macro)]
 
-#[macro_use]
-extern crate serde_derive;
+// Only used in auth.rs
+#[macro_use] extern crate serde_json;
 
-extern crate rocket;
-
-#[macro_use]
-extern crate rocket_contrib;
-
-#[macro_use]
-extern crate diesel;
-
-#[macro_use]
-extern crate validator_derive;
-
-extern crate validator;
-
-extern crate chrono;
+#[macro_use] extern crate rocket;
+#[macro_use] extern crate diesel;
 
 // ensure macros are imported before
 // any modules that might use them
@@ -49,13 +37,12 @@ pub fn runner() -> Result<rocket::Rocket, String> {
                 routes::users::get_users,
                 routes::users::get_user,
                 routes::users::signup_user,
-                routes::all::tester,
-                routes::all::tester_2,
-                routes::all::tester_3,
                 routes::doors::create_door,
+                routes::doors::get_doors,
+                routes::doors::get_door
             ],
         ).manage(pool)
-        .catch(catchers![
+        .register(catchers![
             // returns a 404 for URLs not mapped
             routes::all::not_found,
             routes::all::not_authorized,

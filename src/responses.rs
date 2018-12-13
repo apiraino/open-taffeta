@@ -5,26 +5,27 @@ use diesel::result::Error as DieselError;
 use rocket::http::{ContentType, Status};
 use rocket::request::Request;
 use rocket::response::{Responder, Response};
-use rocket_contrib::Value;
+use rocket_contrib::json;
+use rocket_contrib::json::JsonValue;
 use std::convert::From;
 use std::io::Cursor;
 
 #[derive(Debug)]
 pub struct APIResponse {
-    data: Value,
+    data: JsonValue,
     status: Status,
 }
 
 impl APIResponse {
     /// Set the data of the `Response` to `data`.
-    pub fn data(mut self, data: Value) -> APIResponse {
+    pub fn data(mut self, data: JsonValue) -> APIResponse {
         self.data = data;
         self
     }
 
-    /// Convenience method to set `self.data` to `{"message": message}`.
-    pub fn message(mut self, message: &str) -> APIResponse {
-        self.data = json!({ "message": message });
+    /// Convenience method to set `self.data` to `{"detail": detail}`.
+    pub fn detail(mut self, detail: &str) -> APIResponse {
+        self.data = json!({ "detail": detail });
         self
     }
 }

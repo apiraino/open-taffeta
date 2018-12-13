@@ -3,8 +3,9 @@
 use rocket::Outcome;
 use rocket::request::{self, FromRequest, Request};
 use rocket::http::Status;
-
-use config;
+// Need serde directly, rocket_contrib export is still WIP
+use serde_derive::{Serialize, Deserialize};
+use crate::config;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Auth {

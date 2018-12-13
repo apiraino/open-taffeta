@@ -1,4 +1,3 @@
-#![feature(rust_2018_preview)]
 use std::env;
 
 // extern crate env_logger;

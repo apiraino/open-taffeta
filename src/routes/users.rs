@@ -7,10 +7,20 @@ use crate::schema::users::dsl::*;
 use diesel::prelude::*;
 use diesel::result::DatabaseErrorKind;
 use diesel::result::Error;
+use rocket::data::{self, FromDataSimple};
+use rocket::{Request, Data, Outcome, Outcome::*};
 use rocket::http::Status;
-use rocket::response::{status, Failure};
-use rocket_contrib::{Json, Value};
+use rocket::response::status;
+use rocket_contrib::json;
+// https://mozilla.logbot.info/rocket/20181211#c15708806
+// - Json<T> does not change anywhere.
+// - Json<Value> as a responder changes to JsonValue
+// - The new JsonValue is only really interesting as a Responder
+use rocket_contrib::json::{Json, JsonValue};
 use validator::{Validate, ValidationError};
+use validator_derive::Validate;
+use serde_derive::{Serialize, Deserialize};
+use crate::auth::Auth;
 
 #[derive(Serialize, Deserialize, Validate, Debug, Insertable)]
 #[table_name = "users"]
@@ -44,23 +54,32 @@ pub fn validate_pwd_strength(pwd: &str) -> Result<(), ValidationError> {
 }
 
 #[get("/users", format = "application/json")]
-fn get_users(conn: db::Conn) -> Json<Value> {
+pub fn get_users(conn: db::Conn, auth: Auth) -> JsonValue {
     let users_rs = users.load::<User>(&*conn).expect("error retrieving users");
-    Json(json!({ "users": users_rs }))
+    json!({ "users": users_rs })
 }
 
 #[get("/user/<user_id>", format = "application/json")]
-fn get_user(conn: db::Conn, user_id: i32) -> Json<Value> {
+pub fn get_user(conn: db::Conn, auth: Auth, user_id: i32) -> JsonValue {
     let user: Vec<User> = users
         .filter(active.eq(true))
         .filter(id.eq(user_id))
         .load(&*conn)
         .expect(&format!("error retrieving user id={}", user_id));
-    Json(json!({ "user": user }))
+
+    if user.len() != 1 {
+        let resp_data = json!({
+            "status": "error",
+            "detail": format!("Wrong records found ({}) for user_id={}",
+                              user.len(), user_id)
+        });
+        bad_request().data(resp_data);
+    }
+    json!({ "user": user[0] })
 }
 
 #[post("/signup", data = "<user_data>", format = "application/json")]
-fn signup_user(conn: db::Conn, user_data: Json<NewUser>) -> APIResponse {
+pub fn signup_user(conn: db::Conn, user_data: Json<NewUser>) -> APIResponse {
     let new_user = NewUser {
         username: user_data.username.clone(),
         password: user_data.password.clone(),
@@ -71,7 +90,6 @@ fn signup_user(conn: db::Conn, user_data: Json<NewUser>) -> APIResponse {
     if res.is_err() {
         let errs = res.unwrap_err();
         let err_msg = format!("Data validation error: {:#?}", errs);
-        println!("{:?}", err_msg);
         let resp_data = json!({
             "status":"error",
             "detail": err_msg
