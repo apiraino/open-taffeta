@@ -78,63 +78,63 @@ pub fn no_content() -> APIResponse {
 
 pub fn bad_request() -> APIResponse {
     APIResponse {
-        data: json!({"message": "Bad Request"}),
+        data: json!({"detail": "Bad Request"}),
         status: Status::BadRequest,
     }
 }
 
 pub fn unauthorized() -> APIResponse {
     APIResponse {
-        data: json!({"message": "Unauthorized"}),
+        data: json!({"detail": "Unauthorized"}),
         status: Status::Unauthorized,
     }
 }
 
 pub fn forbidden() -> APIResponse {
     APIResponse {
-        data: json!({"message": "Forbidden"}),
+        data: json!({"detail": "Forbidden"}),
         status: Status::Forbidden,
     }
 }
 
 pub fn not_found() -> APIResponse {
     APIResponse {
-        data: json!({"message": "Not Found"}),
+        data: json!({"detail": "Not Found"}),
         status: Status::NotFound,
     }
 }
 
 pub fn method_not_allowed() -> APIResponse {
     APIResponse {
-        data: json!({"message": "Method Not Allowed"}),
+        data: json!({"detail": "Method Not Allowed"}),
         status: Status::MethodNotAllowed,
     }
 }
 
 pub fn conflict() -> APIResponse {
     APIResponse {
-        data: json!({"message": "Conflict"}),
+        data: json!({"detail": "Conflict"}),
         status: Status::Conflict,
     }
 }
 
-pub fn unprocessable_entity(errors: Value) -> APIResponse {
+pub fn unprocessable_entity(errors: JsonValue) -> APIResponse {
     APIResponse {
-        data: json!({ "message": errors }),
+        data: json!({ "detail": errors }),
         status: Status::UnprocessableEntity,
     }
 }
 
 pub fn internal_server_error() -> APIResponse {
     APIResponse {
-        data: json!({"message": "Internal Server Error"}),
+        data: json!({"detail": "Internal Server Error"}),
         status: Status::InternalServerError,
     }
 }
 
 pub fn service_unavailable() -> APIResponse {
     APIResponse {
-        data: json!({"message": "Service Unavailable"}),
+        data: json!({"detail": "Service Unavailable"}),
         status: Status::ServiceUnavailable,
     }
 }
