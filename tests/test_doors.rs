@@ -11,7 +11,7 @@ use reqwest::{Client, StatusCode};
 
 mod common;
 
-use common::dbstate::DbState;
+use crate::common::dbstate::DbState;
 
 // TODO: have a look here
 // https://bitbucket.org/dorianpula/rookeries/src/master/tests/test_site_management.rs
@@ -36,10 +36,14 @@ fn test_bad_auth() {
 
 #[test]
 fn test_create() {
-    DbState::new();
+    let state = DbState::new();
     let api_base_uri = common::api_base_url();
     let (_, token) = common::signup_user("josh", "josh@domain.com");
     let client = Client::new();
+
+    // check for 0 doors
+    state.assert_empty_doors();
+
     let payload = json!({"name":"door123"});
     let response = client
         .post(api_base_uri.join("/door").unwrap())
@@ -48,4 +52,13 @@ fn test_create() {
         .send()
         .unwrap();
     assert_eq!(response.status(), StatusCode::CREATED);
+
+    // check new door
+    let response = client
+        .get(api_base_uri.join("/doors").unwrap())
+        .json(&payload)
+        .header(AUTHORIZATION, HeaderValue::from_str(token.as_str()).unwrap())
+        .send()
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
 }

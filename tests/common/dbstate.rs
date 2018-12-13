@@ -1,15 +1,16 @@
 extern crate diesel;
 extern crate open_taffeta_lib;
 
-use common::dbstate::diesel::sqlite::SqliteConnection;
+use crate::common::dbstate::diesel::sqlite::SqliteConnection;
 // this re-exports `.eq` from `diesel::ExpressionMethods`
-use common::dbstate::diesel::prelude::*;
-use common::generate_password;
+use crate::common::dbstate::diesel::prelude::*;
+use crate::common::generate_password;
 
 use std::env;
 
 use open_taffeta_lib::models::User;
 use open_taffeta_lib::schema::users::dsl::*;
+use open_taffeta_lib::schema::doors::dsl::*;
 
 pub struct DbState {
     conn: SqliteConnection,
@@ -24,7 +25,7 @@ impl DbState {
         DbState { conn: SqliteConnection::establish(&database_url).unwrap() }
     }
 
-    // warning: "email" will collide with "open_taffeta_lib::schema::users::email" (duh)
+    // warning: "email" param colliding with "open_taffeta_lib::schema::users::email" (duh)
     pub fn create_user(&self, email_fld: &str) -> (User, String) {
         let mut test_user = User::default();
         test_user.username = String::from("john");
@@ -51,16 +52,25 @@ impl DbState {
         (user, test_password)
     }
 
-    pub fn clean_users(&self) {
+    pub fn assert_empty_users(&self) {
+        assert_eq!(0, users.count().execute(&self.conn).unwrap());
+    }
+
+    pub fn assert_empty_doors(&self) {
+        assert_eq!(0, doors.count().execute(&self.conn).unwrap());
+    }
+
+    pub fn clean_tables(&self) {
         // TODO: truncate (if supported)
         diesel::delete(users).execute(&self.conn)
             .expect("Cannot delete users");
+        diesel::delete(doors).execute(&self.conn)
+            .expect("Cannot delete doors");
     }
-
 }
 
 impl Drop for DbState {
     fn drop(&mut self) {
-        self.clean_users();
+        self.clean_tables();
     }
 }

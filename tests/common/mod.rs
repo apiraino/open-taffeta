@@ -1,18 +1,51 @@
 extern crate rand;
 extern crate crypto;
+extern crate open_taffeta_lib;
 
-use common::rand::distributions::Alphanumeric;
-use common::rand::{thread_rng, Rng};
-use common::crypto::pbkdf2::pbkdf2_simple;
-
+use rand::distributions::Alphanumeric;
+use rand::{thread_rng, Rng};
+use crypto::pbkdf2::pbkdf2_simple;
 use std::env;
 
 use reqwest::{Url, Client, StatusCode};
 
-extern crate rocket_contrib;
-use common::rocket_contrib::{Value};
+// need "Value" because serde serializers
+// exported from Rocket 0.4 get compiler confused (?)
+// use rocket_contrib::json::JsonValue;
+use serde_json::Value;
+use serde_derive::{Deserialize};
+use open_taffeta_lib::models::UserAuth;
 
 pub mod dbstate;
+
+#[derive(Deserialize, Debug)]
+pub struct ResponseSignup {
+    pub user: UserAuth
+}
+
+#[derive(Deserialize, Debug)]
+pub struct ResponseListUser {
+    pub users: Vec<User>
+}
+
+#[derive(Deserialize, Debug)]
+pub struct ResponseUserDetail {
+    pub user: User
+}
+
+#[derive(Deserialize, Debug)]
+pub struct User {
+    pub id: i32,
+    pub active: bool,
+    pub username: String,
+    pub password: String,
+    pub email: String
+}
+
+#[derive(Deserialize, Debug)]
+pub struct ResponseError {
+    pub detail: String
+}
 
 pub fn api_base_url() -> Url {
     let server_base_url = match env::var("TEST_SERVER") {
@@ -36,11 +69,14 @@ pub fn signup_user(username: &str, email: &str) -> (Value, String) {
         .send()
         .unwrap();
     assert_eq!(response.status(), StatusCode::CREATED);
-    let resp_str : &str = &response.text().unwrap().to_string();
-    let resp_data : Value = serde_json::from_str(resp_str).unwrap();
-    let resp_user_data = resp_data["user"].clone();
-    let token = String::from(resp_data["user"]["token"].as_str().unwrap());
-    (resp_user_data, token)
+    let resp_data : ResponseSignup = response.json().unwrap();
+    let token = resp_data.user.token;
+    let user_data = json!({
+        "id": resp_data.user.id,
+        "username": resp_data.user.username,
+        "email": resp_data.user.email
+    });
+    (user_data, token)
 }
 
 pub fn generate_password() -> String {
