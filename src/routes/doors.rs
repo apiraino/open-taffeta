@@ -3,7 +3,7 @@ use crate::db;
 use crate::models::Door;
 use crate::schema::doors;
 use crate::schema::doors::dsl::*;
-use crate::responses::{bad_request, created, unauthorized, APIResponse};
+use crate::responses::{created, APIResponse};
 use diesel::prelude::*;
 use diesel::result::DatabaseErrorKind;
 use rocket_contrib::json;

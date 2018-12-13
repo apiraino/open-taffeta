@@ -31,9 +31,7 @@ impl Auth {
 
 #[derive(Debug)]
 pub enum ApiKeyError {
-    BadCount,
-    Missing,
-    Invalid,
+    Missing
 }
 
 impl<'a, 'r> FromRequest<'a, 'r> for Auth {

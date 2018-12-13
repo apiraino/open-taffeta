@@ -6,11 +6,6 @@ use crate::schema::users;
 use crate::schema::users::dsl::*;
 use diesel::prelude::*;
 use diesel::result::DatabaseErrorKind;
-use diesel::result::Error;
-use rocket::data::{self, FromDataSimple};
-use rocket::{Request, Data, Outcome, Outcome::*};
-use rocket::http::Status;
-use rocket::response::status;
 use rocket_contrib::json;
 // https://mozilla.logbot.info/rocket/20181211#c15708806
 // - Json<T> does not change anywhere.
@@ -100,7 +95,7 @@ pub fn signup_user(conn: db::Conn, user_data: Json<NewUser>) -> APIResponse {
     match diesel::insert_into(users).values(&new_user).execute(&*conn) {
         Err(err) => {
             if let diesel::result::Error::DatabaseError(
-                diesel::result::DatabaseErrorKind::UniqueViolation,
+                DatabaseErrorKind::UniqueViolation,
                 _,
             ) = err
             {
