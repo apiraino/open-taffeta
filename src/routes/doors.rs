@@ -5,7 +5,7 @@ use crate::schema::doors;
 // If a module manages more tables, keep dsl imports in functions
 // https://gitter.im/diesel-rs/diesel?at=5b74459749932d4fe4e690b8
 use crate::schema::doors::dsl::*;
-use crate::responses::{created, APIResponse};
+use crate::responses::{bad_request, ok, no_content, created, APIResponse};
 use diesel::prelude::*;
 use diesel::result::DatabaseErrorKind;
 use rocket_contrib::json;
@@ -57,40 +57,76 @@ pub fn get_doors(conn: db::Conn, _auth: Auth) -> JsonValue {
 }
 
 #[get("/door/<door_id>", format = "application/json")]
-pub fn get_door(conn: db::Conn, _auth: Auth, door_id: i32) -> JsonValue {
-    let door: Vec<Door> = doors
-        .filter(id.eq(door_id))
-        .load(&*conn)
-        .expect(&format!("error retrieving door id={}", door_id));
-    json!({ "door": door })
+pub fn get_door(conn: db::Conn, _auth: Auth, door_id: i32) -> APIResponse {
+    let door_res : QueryResult<Door> = doors
+        .find(door_id)
+        .first(&*conn);
+
+    match door_res {
+        Ok(door_data) => {
+            let j = json!({ "door": door_data });
+            ok().data(j)
+        },
+        Err(err) => {
+            let resp_data = json!({
+                "status": "error",
+                "detail": format!("Could not find record for door_id={}: {:?}",
+                                  door_id, err)
+            });
+            bad_request().data(resp_data)
+        }
+    }
+}
+
+#[delete("/door/<door_id>", format = "application/json")]
+pub fn delete_door(conn: db::Conn, _auth: Auth, door_id: i32) -> APIResponse {
+    let err_msg = format!("Cannot delete door_id={}", door_id);
+    diesel::delete(doors.filter(id.eq(door_id))).execute(&*conn)
+        .expect(&err_msg);
+    no_content()
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::routes::doors::NewDoor;
-    use crate::schema::doors::dsl::*;
+    use std::env;
     use diesel::prelude::*;
     use diesel::sqlite::Sqlite;
-    use std::env;
+    use crate::routes::doors::NewDoor;
+    use crate::schema::doors::dsl::*;
+    use crate::models::Door;
 
     fn get_connection() -> SqliteConnection {
-        let database_url = env::var("DATABASE_URL").unwrap();
-        SqliteConnection::establish(&database_url).unwrap()
+        let database_url = env::var("DATABASE_URL").expect("Could not find DATABASE_URL in env");
+        SqliteConnection::establish(&database_url).expect("Could not establish connection")
     }
 
-    fn add_test_door(conn: &SqliteConnection) {
+    fn add_test_door(conn: &SqliteConnection) -> Door {
         let new_door = NewDoor {
             name: String::from("test-door")
         };
-        let res = diesel::insert_into(doors).values(&new_door).execute(conn);
-        match res {
-            Err(err) => panic!("[test] Insert into doors failed: {:?}", err),
-            Ok(_) => {}
+        let insert_res = diesel::insert_into(doors).values(&new_door).execute(conn);
+        match insert_res {
+            Ok(_) => {},
+            Err(err) => {
+                panic!("Insert failed: {:?}", err);
+            }
         }
+
+        let door = doors
+            .filter(name.eq(&new_door.name))
+            .first(&*conn)
+            .expect(&format!("error getting doors with name={}", new_door.name));
+        door
     }
 
     fn setup() -> SqliteConnection {
         get_connection()
+    }
+
+    fn teardown() {
+        let conn = get_connection();
+        diesel::delete(doors).execute(&conn)
+            .expect("Cannot prune doors table");
     }
 
     #[test]
@@ -101,5 +137,19 @@ mod tests {
         let q = doors.filter(name.eq("front-door"));
         let sql = diesel::debug_query::<Sqlite, _>(&q).to_string();
         println!(">>> SQL: {:?}", sql);
+        teardown();
+    }
+
+    #[test]
+    fn test_get() {
+        let conn = setup();
+        let door_data = add_test_door(&conn);
+
+        let door : Door = doors
+            .find(door_data.id)
+            .first(&conn)
+            .unwrap();
+        println!(">>> door {:?}", door);
+        teardown();
     }
 }

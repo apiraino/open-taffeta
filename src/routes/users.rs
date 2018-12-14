@@ -1,7 +1,7 @@
 #[allow(proc_macro_derive_resolution_fallback)]
 use crate::db;
 use crate::models::User;
-use crate::responses::{bad_request, created, APIResponse};
+use crate::responses::{ok, bad_request, created, APIResponse};
 use crate::schema::users;
 use crate::schema::users::dsl::*;
 use diesel::prelude::*;
@@ -67,7 +67,7 @@ pub fn get_users(conn: db::Conn, _auth: Auth, is_active: Option<bool>) -> JsonVa
 }
 
 #[get("/user/<user_id>", format = "application/json")]
-pub fn get_user(conn: db::Conn, _auth: Auth, user_id: i32) -> JsonValue {
+pub fn get_user(conn: db::Conn, _auth: Auth, user_id: i32) -> APIResponse {
     let user: Vec<User> = users
         .filter(active.eq(true))
         .filter(id.eq(user_id))
@@ -77,12 +77,12 @@ pub fn get_user(conn: db::Conn, _auth: Auth, user_id: i32) -> JsonValue {
     if user.len() != 1 {
         let resp_data = json!({
             "status": "error",
-            "detail": format!("Wrong records found ({}) for user_id={}",
+            "detail": format!("Wrong records count found ({}) for user_id={}",
                               user.len(), user_id)
         });
         bad_request().data(resp_data);
     }
-    json!({ "user": user[0] })
+    ok().data(json!({ "user": user[0] }))
 }
 
 #[post("/signup", data = "<user_data>", format = "application/json")]

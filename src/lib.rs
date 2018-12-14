@@ -39,7 +39,8 @@ pub fn runner() -> Result<rocket::Rocket, String> {
                 routes::users::signup_user,
                 routes::doors::create_door,
                 routes::doors::get_doors,
-                routes::doors::get_door
+                routes::doors::get_door,
+                routes::doors::delete_door
             ],
         ).manage(pool)
         .register(catchers![
