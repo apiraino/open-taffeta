@@ -48,9 +48,21 @@ pub fn validate_pwd_strength(pwd: &str) -> Result<(), ValidationError> {
     Ok(())
 }
 
-#[get("/users", format = "application/json")]
-pub fn get_users(conn: db::Conn, _auth: Auth) -> JsonValue {
-    let users_rs = users.load::<User>(&*conn).expect("error retrieving users");
+#[get("/users?<is_active>", format = "application/json")]
+pub fn get_users(conn: db::Conn, _auth: Auth, is_active: Option<bool>) -> JsonValue {
+    let users_rs : Vec<User> = match is_active {
+        Some(_) => {
+            users
+                .filter(active.eq(is_active.unwrap_or_else(|| false)))
+                .load(&*conn)
+                .expect("error retrieving users")
+        },
+        None => {
+            users
+                .load(&*conn)
+                .expect("error retrieving users")
+        }
+    };
     json!({ "users": users_rs })
 }
 
