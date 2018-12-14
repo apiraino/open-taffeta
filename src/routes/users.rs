@@ -1,4 +1,4 @@
-#[allow(proc_macro_derive_resolution_fallback)]
+#![allow(proc_macro_derive_resolution_fallback)]
 use crate::db;
 use crate::models::User;
 use crate::responses::{ok, bad_request, created, APIResponse};
@@ -72,7 +72,7 @@ pub fn get_user(conn: db::Conn, _auth: Auth, user_id: i32) -> APIResponse {
         .filter(active.eq(true))
         .filter(id.eq(user_id))
         .load(&*conn)
-        .expect(&format!("error retrieving user id={}", user_id));
+        .unwrap_or_else(|_| panic!("error retrieving user id={}", user_id));
 
     if user.len() != 1 {
         let resp_data = json!({
@@ -132,10 +132,7 @@ pub fn signup_user(conn: db::Conn, user_data: Json<NewUser>) -> APIResponse {
             let user: User = users
                 .filter(username.eq(&new_user.username))
                 .first(&*conn)
-                .expect(&format!(
-                    "error getting user with username {}",
-                    new_user.username
-                ));
+                .unwrap_or_else(|_| panic!("error getting user with username {}", new_user.username));
 
             let user_auth = user.to_user_auth();
             let resp_data = json!({ "user": user_auth });

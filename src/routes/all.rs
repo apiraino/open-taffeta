@@ -1,4 +1,4 @@
-#[allow(proc_macro_derive_resolution_fallback)]
+#![allow(proc_macro_derive_resolution_fallback)]
 use rocket_contrib::json;
 use rocket_contrib::json::JsonValue;
 

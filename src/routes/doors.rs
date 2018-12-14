@@ -1,4 +1,4 @@
-#[allow(proc_macro_derive_resolution_fallback)]
+#![allow(proc_macro_derive_resolution_fallback)]
 use crate::db;
 use crate::models::Door;
 use crate::schema::doors;
@@ -45,7 +45,7 @@ pub fn create_door(conn: db::Conn, _auth: Auth, door_data: Json<NewDoor>) -> API
     let door: Door = doors
         .filter(name.eq(&new_door.name))
         .first(&*conn)
-        .expect(&format!("error getting doors with name={}", new_door.name));
+        .unwrap_or_else(|_| panic!("error getting doors with name={}", new_door.name));
     let resp_data = json!({ "door": door });
     created().data(resp_data)
 }
