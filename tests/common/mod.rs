@@ -14,7 +14,7 @@ use reqwest::{Url, Client, StatusCode};
 // use rocket_contrib::json::JsonValue;
 use serde_json::Value;
 use serde_derive::{Deserialize};
-use open_taffeta_lib::models::UserAuth;
+use open_taffeta_lib::models::{UserAuth, Door};
 
 pub mod dbstate;
 
@@ -45,6 +45,11 @@ pub struct User {
 #[derive(Deserialize, Debug)]
 pub struct ResponseError {
     pub detail: String
+}
+
+#[derive(Deserialize, Debug)]
+pub struct ResponseDoorCreated {
+    pub door: Door
 }
 
 pub fn api_base_url() -> Url {
