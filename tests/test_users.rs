@@ -17,7 +17,7 @@ use crate::common::dbstate::DbState;
 #[test]
 fn test_db() {
     let state = DbState::new();
-    state.create_user("josh@domain.com");
+    state.create_user("josh@domain.com", true);
 }
 
 #[test]
@@ -47,11 +47,24 @@ fn test_create_user() {
 fn test_list_users() {
     let state = DbState::new();
     state.clean_tables();
+    state.create_user("inactive@domain.com", false);
     let (_, token) = common::signup_user("josh", "josh@domain.com");
     let api_base_uri = common::api_base_url();
     let client = Client::new();
+
+    // query all users
     let mut response = client
         .get(api_base_uri.join("/users").unwrap())
+        .header(AUTHORIZATION, HeaderValue::from_str(token.as_str()).unwrap())
+        .send()
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let resp_data: common::ResponseListUser = response.json().unwrap();
+    assert_eq!(resp_data.users.len(), 2);
+
+    // query only active users
+    let mut response = client
+        .get(api_base_uri.join("/users?is_active=true").unwrap())
         .header(AUTHORIZATION, HeaderValue::from_str(token.as_str()).unwrap())
         .send()
         .unwrap();

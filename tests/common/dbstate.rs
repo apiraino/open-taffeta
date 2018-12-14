@@ -25,8 +25,8 @@ impl DbState {
         DbState { conn: SqliteConnection::establish(&database_url).unwrap() }
     }
 
-    // warning: "email" param colliding with "open_taffeta_lib::schema::users::email" (duh)
-    pub fn create_user(&self, email_fld: &str) -> (User, String) {
+    // warning: "email" param colliding with fields in "open_taffeta_lib::schema::users::*" (duh)
+    pub fn create_user(&self, email_fld: &str, is_active: bool) -> (User, String) {
         let mut test_user = User::default();
         test_user.username = String::from("john");
         test_user.email = String::from(email_fld);
@@ -38,15 +38,16 @@ impl DbState {
                 username.eq(&test_user.username),
                 password.eq(&test_user.password),
                 email.eq(&test_user.email),
+                active.eq(is_active)
             )).execute(&self.conn)
             .expect("Test user could not be created.");
 
         let user: User = users
-            .filter(username.eq(&test_user.username))
+            .filter(email.eq(&test_user.email))
             .first(&self.conn)
             .expect(&format!(
-                "error getting user with username {}",
-                test_user.username
+                "error getting user with email {}",
+                test_user.email
             ));
 
         (user, test_password)
