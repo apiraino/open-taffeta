@@ -1,4 +1,4 @@
-## open-taffeta
+## open-taffeta [![Build Status](https://travis-ci.org/apiraino/open-taffeta.svg?branch=master)](https://travis-ci.org/apiraino/open-taffeta)
 Raspberry Pi-hosted website controlling access to a building
 
 ### Rust + application setup
