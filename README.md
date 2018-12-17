@@ -73,6 +73,16 @@ The response should look like this JSON:
 }]
 ```
 
+### As a Docker container
+
+* `docker/Dockerfile`: recipe to build the image
+
+* `docker/build.sh`: script to rebuild the image (~1.7gb currently, working on making it thinner)
+
+* `docker/run.sh`: script to tun locally the container for test
+
+* `docker-compose -f docker/docker-compose.yml up`: raise the container using docker compose (adviced)
+
 ### Endpoints
 
 See [Wiki](https://github.com/apiraino/open-taffeta/wiki/Endpoints)
