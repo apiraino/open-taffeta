@@ -1,12 +1,8 @@
-// #![feature(rust_2018_preview)]
 // workaround this: https://github.com/rust-lang/rust/issues/50504#issuecomment-412341631
 #![allow(proc_macro_derive_resolution_fallback)]
 #![feature(plugin)]
 #![feature(custom_attribute)]
 #![feature(proc_macro_hygiene, decl_macro)]
-
-// Only used in auth.rs
-#[macro_use] extern crate serde_json;
 
 #[macro_use] extern crate rocket;
 #[macro_use] extern crate diesel;

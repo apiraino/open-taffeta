@@ -6,6 +6,8 @@ use rocket::http::Status;
 // Need serde directly, rocket_contrib export is still WIP
 use serde_derive::{Serialize, Deserialize};
 use crate::config;
+use jsonwebtoken as jwt;
+use self::jwt::{Header, Algorithm};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Auth {
@@ -18,14 +20,19 @@ pub struct Auth {
 
 impl Auth {
     pub fn token(&self) -> String {
-        let header = json!({});
-        let payload = json!(self);
-        frank_jwt::encode(
-            header,
-            &config::SECRET.to_string(),
+        let mut header = Header::default();
+        header.kid = Some("TODO: signing_key".to_owned());
+        header.alg = Algorithm::HS512;
+        let payload = Auth {
+            exp: 10_000_000_000,
+            id: self.id,
+            username: self.username.to_string()
+        };
+        jwt::encode(
+            &header,
             &payload,
-            frank_jwt::Algorithm::HS256,
-        ).expect("frank_jwt")
+            config::SECRET.as_ref()
+        ).expect("jwt encoding failed")
     }
 }
 
@@ -49,18 +56,15 @@ impl<'a, 'r> FromRequest<'a, 'r> for Auth {
 fn extract_auth_from_request(request: &Request) -> Option<Auth> {
     let header = request.headers().get("authorization").next();
     if let Some(token) = header {
-        match frank_jwt::decode(
+        match jwt::decode::<Auth>(
             &token.to_string(),
-            &config::SECRET.to_string(),
-            frank_jwt::Algorithm::HS256,
+            config::SECRET.as_ref(),
+            &jwt::Validation::new(Algorithm::HS512),
         ) {
             Err(err) => {
                 println!("Auth decode error: {:?}", err);
             }
-            Ok((_, payload)) => match serde_json::from_value::<Auth>(payload) {
-                Ok(auth) => return Some(auth),
-                Err(err) => println!("Auth serde decode error: {:?}", err),
-            },
+            Ok(c) => return Some(c.claims),
         };
     }
     None
