@@ -4,20 +4,31 @@ use std::env;
 // #[macro_use]
 // extern crate log;
 
+use rocket::config::Environment;
+
 extern crate dotenv;
 
 extern crate open_taffeta_lib;
 
 fn main() {
-    // reads the appropriate config file and sets env vars
-    let deploy_env = env::var("DEPLOY_ENV").unwrap_or_else(|_| String::from("TEST"));
+    // Load env vars
+    // TODO: improve with a Rocket.toml
+    // https://rocket.rs/v0.4/guide/configuration/#rockettoml
+    let deploy_env = env::var("ROCKET_ENV").unwrap_or_else(|_| String::from("dev"));
     let env_file = format!(".env_{}", deploy_env);
     dotenv::from_filename(env_file).ok();
+
+    let env = match deploy_env.as_ref() {
+        "prod" => Environment::Production,
+        "stage" => Environment::Staging,
+        "dev" => Environment::Development,
+        _ => Environment::Development
+    };
 
     // TODO: fix logging
     // env_logger::init();
 
-    let runner = open_taffeta_lib::runner().unwrap();
+    let runner = open_taffeta_lib::runner(env).unwrap();
     // 🚀  Rocket has launched
     runner.launch();
 }

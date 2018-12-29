@@ -21,9 +21,18 @@ mod routes;
 pub mod schema;
 mod auth;
 
-pub fn runner() -> Result<rocket::Rocket, String> {
+use rocket::config::{Config, Environment};
+
+pub fn runner(env: Environment) -> Result<rocket::Rocket, String> {
     let pool = db::init_pool();
-    let rocket = rocket::ignite()
+
+    // default: localhost:8000
+    let config = Config::build(env)
+        .address("0.0.0.0")
+        .port(8080)
+        .finalize().unwrap();
+
+    let rocket = rocket::custom(config)
         // mount the routes
         .mount(
             "/",

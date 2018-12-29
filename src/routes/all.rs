@@ -20,5 +20,5 @@ pub fn not_authorized() -> JsonValue {
 
 #[get("/")]
 pub fn get_index() -> &'static str {
-    "Welcome!"
+    "Hey there! Interested in Rust?\n\nCome stop by the LuXeria place!"
 }
