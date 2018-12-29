@@ -7,7 +7,7 @@ RUN apt-get -yyq autoremove && \
         rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 ENV DATABASE_URL=app.db
-ENV DEPLOY_MODE=PROD
+ENV ROCKET_ENV=prod
 ENV ROCKET_ADDRESS=0.0.0.0
 ENV ROCKET_PORT=8080
 
@@ -21,8 +21,7 @@ RUN cargo install cargo-watch
 
 COPY Cargo.toml ./Cargo.toml
 COPY migrations ./migrations
-# COPY ./docker/cargo_run.sh .
-COPY .env_PROD .
+COPY .env_prod .
 
 RUN cargo build --release
 RUN diesel migration run
