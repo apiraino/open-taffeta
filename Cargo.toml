@@ -17,6 +17,10 @@ version = "0.4.0"
 default-features = false
 features = ["json"]
 
+[dependencies.libsqlite3-sys]
+version = "0.9.3"
+features = ["bundled"]
+
 [dependencies]
 rocket = "0.4.0"
 rocket_cors = "0.4.0-rc.3"
