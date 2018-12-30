@@ -1,7 +1,8 @@
-FROM liuchong/rustup:nightly
+# FROM liuchong/rustup:nightly
+FROM resin/raspberry-pi-debian
 
 RUN apt-get update && \
-        apt-get install -y libpq-dev libsqlite3-dev
+        apt-get install -y libsqlite3-dev
 RUN apt-get -yyq autoremove && \
         apt-get clean -yyq && \
         rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
