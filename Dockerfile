@@ -24,7 +24,6 @@ RUN apt-get -yyq autoremove && \
 
 # install rust nightly
 RUN curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y
-# RUN rustup default nightly
 
 # maybe also chrono and r2d2?
 RUN cargo install diesel_cli --force --no-default-features --features sqlite
