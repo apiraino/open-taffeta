@@ -18,8 +18,8 @@ RUN apt-get -yyq autoremove && \
         rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # install rust nightly
-# RUN curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y
-# RUN . $HOME/.cargo/env
+RUN curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y
+RUN . $HOME/.cargo/env
 
 # RUN $HOME/.cargo/bin/cargo install diesel_cli --force --no-default-features --features sqlite
 # RUN $HOME/.cargo/bin/cargo install cargo-watch
