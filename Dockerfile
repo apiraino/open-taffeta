@@ -21,8 +21,8 @@ RUN apt-get -yyq autoremove && \
 RUN curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y
 RUN . $HOME/.cargo/env
 
-# RUN $HOME/.cargo/bin/cargo install diesel_cli --force --no-default-features --features sqlite
-# RUN $HOME/.cargo/bin/cargo install cargo-watch
+RUN $HOME/.cargo/bin/cargo install diesel_cli --force --no-default-features --features sqlite
+RUN $HOME/.cargo/bin/cargo install cargo-watch
 
 # COPY Cargo.toml ./Cargo.toml
 # COPY migrations ./migrations
