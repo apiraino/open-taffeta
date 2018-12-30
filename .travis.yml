@@ -5,7 +5,7 @@ rust:
 
 cache: cargo
 env:
-  - DATABASE_URL=test_app.db TEST_SERVER=http://localhost:8000 ROCKET_ENV=dev
+  - DATABASE_URL=test_app.db TEST_SERVER=http://localhost:8080 ROCKET_ENV=dev
 
 before_script:
   - rustup component add rust-src
