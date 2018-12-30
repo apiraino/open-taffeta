@@ -11,7 +11,7 @@ ADD src /app/src
 WORKDIR /app
 
 # update distro to buster: fixes glibc mismatch with open-taffeta
-RUN apt-get install software-properties-common
+RUN apt install -y software-properties-common
 RUN add-apt-repository \
         "deb http://raspbian.raspberrypi.org/raspbian/ \
         buster main contrib non-free rpi"
