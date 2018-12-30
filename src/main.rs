@@ -12,8 +12,6 @@ extern crate open_taffeta_lib;
 
 fn main() {
     // Load env vars
-    // TODO: improve with a Rocket.toml
-    // https://rocket.rs/v0.4/guide/configuration/#rockettoml
     let deploy_env = env::var("ROCKET_ENV").unwrap_or_else(|_| String::from("dev"));
     let env_file = format!(".env_{}", deploy_env);
     dotenv::from_filename(env_file).ok();
