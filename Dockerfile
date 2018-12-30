@@ -11,9 +11,7 @@ ADD src /app/src
 WORKDIR /app
 
 # update distro to buster: fixes glibc mismatch with open-taffeta
-RUN apt dist-upgrade && \
-        apt -y upgrade && \
-        apt -y update
+RUN apt -y upgrade && apt -y update
 RUN apt install -y build-essential libsqlite3-dev
 RUN apt-get -yyq autoremove && \
         apt-get clean -yyq && \
