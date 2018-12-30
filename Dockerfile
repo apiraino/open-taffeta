@@ -1,6 +1,6 @@
 # Recipe for image for balena.io
 
-FROM resin/raspberry-pi-debian
+FROM resin/raspberry-pi-debian:buster
 
 ENV DATABASE_URL=app.db
 ENV ROCKET_ENV=prod
@@ -11,10 +11,6 @@ ADD src /app/src
 WORKDIR /app
 
 # update distro to buster: fixes glibc mismatch with open-taffeta
-RUN apt install -y software-properties-common
-RUN add-apt-repository \
-        "deb http://raspbian.raspberrypi.org/raspbian/ \
-        buster main contrib non-free rpi"
 RUN apt dist-upgrade && \
         apt -y upgrade
 # RUN apt install -y libsqlite3-dev
