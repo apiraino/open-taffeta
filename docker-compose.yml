@@ -1,8 +1,0 @@
-version: '3.7'
-
-services:
-  api_server:
-    image: open_taffeta:latest
-    ports:
-      - '8080:8080'
-    command: bash -c "source .env_prod ; cargo watch -x 'run --release'"
