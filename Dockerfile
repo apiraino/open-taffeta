@@ -22,14 +22,14 @@ RUN apt-get -yyq autoremove && \
 RUN curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y
 RUN . $HOME/.cargo/env
 # maybe also chrono and r2d2?
-RUN cargo install diesel_cli --force --no-default-features --features sqlite
-RUN cargo install cargo-watch
+RUN $HOME/.cargo/bin/cargo install diesel_cli --force --no-default-features --features sqlite
+RUN $HOME/.cargo/bin/cargo install cargo-watch
 
 COPY Cargo.toml ./Cargo.toml
 COPY migrations ./migrations
 COPY .env_prod .
 
-RUN cargo build --release
+RUN $HOME/.cargo/bin/cargo build --release
 RUN diesel migration run
 
 EXPOSE 8080
