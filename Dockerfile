@@ -13,7 +13,7 @@ WORKDIR /app
 # update distro to buster: fixes glibc mismatch with open-taffeta
 RUN apt dist-upgrade && \
         apt -y upgrade
-RUN apt install -y build-essential libsqlite3-dev
+RUN apt install -y libsqlite3-dev
 RUN apt-get -yyq autoremove && \
         apt-get clean -yyq && \
         rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
