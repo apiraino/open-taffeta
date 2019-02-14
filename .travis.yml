@@ -11,7 +11,8 @@ before_script:
   - rustup component add rust-src
   - export RUST_SRC_PATH=`rustc --print sysroot`/lib/rustlib/src/rust/src
   - export RUST_TEST_THREADS=1
-  - cargo install cargo-audit diesel_cli --force --no-default-features --features=sqlite
+  - cargo install diesel_cli --force --no-default-features --features=sqlite
+  - cargo install cargo-audit
   - rm -f test_app.db && diesel setup
   - cargo run &
 
