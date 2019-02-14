@@ -11,4 +11,3 @@ Cargo.lock
 
 *.db
 *.sh
-/certs/
