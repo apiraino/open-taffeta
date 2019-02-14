@@ -1,0 +1,7 @@
+FROM marcust/jessie-armhf-rust:nightly
+
+RUN apt-get update && \
+        apt-get install -y libpq-dev libsqlite3-dev
+RUN apt-get -yyq autoremove && \
+        apt-get clean -yyq && \
+        rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*

@@ -24,11 +24,11 @@ RUN . $HOME/.cargo/env
 RUN $HOME/.cargo/bin/cargo install diesel_cli --force --no-default-features --features sqlite
 RUN $HOME/.cargo/bin/cargo install cargo-watch
 
-# COPY Cargo.toml ./Cargo.toml
-# COPY migrations ./migrations
-# COPY .env_prod .
+COPY Cargo.toml ./Cargo.toml
+COPY migrations ./migrations
+COPY .env_prod .
 
-# RUN $HOME/.cargo/bin/cargo build --release
-# RUN diesel migration run
+RUN $HOME/.cargo/bin/cargo build --release
+RUN diesel migration run
 
 EXPOSE 8080
