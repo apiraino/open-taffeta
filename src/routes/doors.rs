@@ -20,6 +20,7 @@ use crate::auth::Auth;
 pub struct NewDoor {
     #[validate(length(min = "4"))]
     name: String,
+    address: String,
 }
 
 // example Diesel usage
@@ -29,6 +30,7 @@ pub struct NewDoor {
 pub fn create_door(conn: db::Conn, _auth: Auth, door_data: Json<NewDoor>) -> APIResponse {
     let new_door = NewDoor {
         name: door_data.name.clone(),
+        address: door_data.address.clone(),
     };
 
     // TODO: also try `get_result()` here
@@ -86,6 +88,33 @@ pub fn delete_door(conn: db::Conn, _auth: Auth, door_id: i32) -> APIResponse {
     no_content()
 }
 
+#[post("/door/<door_id>", format = "application/json")]
+pub fn buzz_door(conn: db::Conn, _auth: Auth, door_id: i32) -> APIResponse {
+    let door_res : QueryResult<Door> = doors
+        .find(door_id)
+        .first(&*conn);
+
+    match door_res {
+        Ok(door_data) => {
+            // TODO: make an async call to the device
+            let resp_data = json!({
+                "status": "ok",
+                "detail": format!("Buzzing door {} on endpoint {}",
+                                  door_data.id, door_data.address)
+            });
+            ok().data(resp_data)
+        },
+        Err(err) => {
+            let resp_data = json!({
+                "status": "error",
+                "detail": format!("Could not find record for door_id={}: {:?}",
+                                  door_id, err)
+            });
+            bad_request().data(resp_data)
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::env;
@@ -102,8 +131,10 @@ mod tests {
 
     fn add_test_door(conn: &SqliteConnection) -> Door {
         let new_door = NewDoor {
-            name: String::from("test-door")
+            name: String::from("test-door"),
+            address: String::from("https://buzzer.whatever.de")
         };
+
         let insert_res = diesel::insert_into(doors).values(&new_door).execute(conn);
         match insert_res {
             Ok(_) => {},

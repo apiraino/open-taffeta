@@ -21,6 +21,7 @@ pub struct User {
 pub struct Door {
     pub id: i32,
     pub name: String,
+    pub address: String,
     pub ring: bool,
     pub ring_ts: Option<i32>,
 }

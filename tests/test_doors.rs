@@ -20,7 +20,10 @@ fn test_bad_auth() {
     DbState::new();
     let api_base_uri = common::api_base_url();
     let client = Client::new();
-    let payload = json!({"name":"door123"});
+    let payload = json!({
+        "name":"door123",
+        "address": "https://buzzer.somewhere.de"
+    });
     let mut response = client
         .post(api_base_uri.join("/door").unwrap())
         .json(&payload)
@@ -43,7 +46,10 @@ fn test_create() {
     // check for 0 doors
     state.assert_empty_doors();
 
-    let payload = json!({"name":"door123"});
+    let payload = json!({
+        "name":"door123",
+        "address": "https://buzzer.somewhere.de"
+    });
     let response = client
         .post(api_base_uri.join("/door").unwrap())
         .json(&payload)
@@ -72,7 +78,10 @@ fn test_delete() {
     // check for 0 doors
     state.assert_empty_doors();
 
-    let payload = json!({"name":"door123"});
+    let payload = json!({
+        "name":"door123",
+        "address": "https://buzzer.somewhere.de"
+    });
     let mut response = client
         .post(api_base_uri.join("/door").unwrap())
         .json(&payload)

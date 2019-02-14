@@ -29,6 +29,7 @@ pub fn runner(env: Environment) -> Result<rocket::Rocket, String> {
     // default: localhost:8000
     let config = Config::build(env)
         .address("0.0.0.0")
+        .tls("certs/localhost.pem", "certs/localhost-key.pem")
         .port(8080)
         .finalize().unwrap();
 
@@ -45,7 +46,8 @@ pub fn runner(env: Environment) -> Result<rocket::Rocket, String> {
                 routes::doors::create_door,
                 routes::doors::get_doors,
                 routes::doors::get_door,
-                routes::doors::delete_door
+                routes::doors::delete_door,
+                routes::doors::buzz_door
             ],
         ).manage(pool)
         .register(catchers![

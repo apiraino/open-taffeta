@@ -20,5 +20,7 @@ pub fn not_authorized() -> JsonValue {
 
 #[get("/")]
 pub fn get_index() -> &'static str {
-    "Hey there! Interested in Rust?\n\nCome stop by the LuXeria place!"
+    "Hey there! Interested in Rust?\n\n
+Come stop by the LuXeria place!\n\n
+Endpoints: https://github.com/apiraino/open-taffeta/wiki/Endpoints"
 }

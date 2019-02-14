@@ -2,6 +2,7 @@ table! {
     doors (id) {
         id -> Integer,
         name -> Text,
+        address -> Text,
         ring -> Bool,
         ring_ts -> Nullable<Integer>,
     }
