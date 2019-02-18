@@ -25,6 +25,7 @@ Install the ORM (Diesel) cli:
 
 `cargo install diesel_cli`
 
+
 ### Performs DB setup and migrations
 
 ``` bash
