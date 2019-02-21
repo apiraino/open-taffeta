@@ -10,7 +10,7 @@
 // ensure macros are imported before
 // any modules that might use them
 #[macro_use]
-mod config;
+pub mod config;
 
 mod db;
 // TODO: this is wrong, used only for tests

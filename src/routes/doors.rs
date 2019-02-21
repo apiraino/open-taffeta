@@ -1,11 +1,4 @@
 #![allow(proc_macro_derive_resolution_fallback)]
-use crate::db;
-use crate::models::Door;
-use crate::schema::doors;
-// If a module manages more tables, keep dsl imports in functions
-// https://gitter.im/diesel-rs/diesel?at=5b74459749932d4fe4e690b8
-use crate::schema::doors::dsl::*;
-use crate::responses::{bad_request, ok, no_content, created, APIResponse};
 use diesel::prelude::*;
 use diesel::result::DatabaseErrorKind;
 use rocket_contrib::json;
@@ -13,7 +6,18 @@ use rocket_contrib::json::{Json, JsonValue};
 use validator::Validate;
 use validator_derive::Validate;
 use serde_derive::{Serialize, Deserialize};
+use reqwest::{Url, Client};
 use crate::auth::Auth;
+use crate::db;
+use crate::models::Door;
+use crate::schema::doors;
+// If a module manages more tables, keep dsl imports in functions
+// https://gitter.im/diesel-rs/diesel?at=5b74459749932d4fe4e690b8
+use crate::schema::doors::dsl::*;
+use crate::responses::{bad_request, ok, no_content, created, APIResponse};
+use crate::config::get_buzzer_url;
+
+// https://jsdw.me/posts/rust-asyncawait-preview/
 
 #[derive(Serialize, Deserialize, Validate, Debug, Insertable)]
 #[table_name = "doors"]
@@ -21,6 +25,82 @@ pub struct NewDoor {
     #[validate(length(min = "4"))]
     name: String,
     address: String,
+}
+
+#[derive(Deserialize, Debug)]
+struct ResponseData {
+    status: i32,
+    message: String
+}
+
+fn calculate_code(code: String) -> i32 {
+
+    // example: "375625" => 52 => 139 * 5 * (5/2) % 1000000 => secret
+    let factor_s : String = code.chars().skip(2).take(1).collect();
+    let factor = match factor_s.parse::<i32>().unwrap() {
+        0 => 3,
+        n => n
+    };
+    let divisor_s : String = code.chars().skip(4).take(1).collect();
+    let divisor = match divisor_s.parse::<i32>().unwrap() {
+        0 => 8,
+        n => n
+    };
+    let code_int = code.parse::<i32>().unwrap();
+    let verification = (139 * code_int * factor / divisor) % 1000000;
+    verification
+}
+
+fn buzz(challenge: String) -> Result<String, String> {
+    // TODO make it async
+    // TODO check return reqwest::StatusCode
+    let client = Client::new();
+    let code = calculate_code(challenge.clone());
+    let s = format!("{}/buzz/{}", get_buzzer_url(), code.to_string());
+    let url = Url::parse(&s).unwrap();
+    let data = json!({"message": challenge});
+
+    let mut response = match client.post(url).json(&data).send() {
+        Ok(x) => x,
+        Err(err) => return Err(format!("Error occurred when buzzing: {:?}", err))
+    };
+
+    // can return 401
+    let res : ResponseData = match response.json() {
+        Ok(x) => x,
+        Err(err) => return Err(format!("Response data is broken: {:?}", err))
+    };
+    eprintln!("Buzz returned: {}", res.message);
+
+    // dbg!((challenge, code.to_string()));
+    Ok("success".to_string())
+}
+
+pub fn get_challenge() -> Result<String, String> {
+    // TODO make it async
+    let client = Client::new();
+    let s = format!("{}/challenge", get_buzzer_url());
+    eprintln!(">>> calling {}", s);
+    let url = Url::parse(&s).unwrap();
+
+    let mut response = match client.post(url).send() {
+        Ok(x) => x,
+        Err(err) => return Err(format!("Could not contact host: {:?}", err))
+    };
+
+    let challenge : ResponseData = match response.json() {
+        Ok(x) => x,
+        Err(err) => return Err(format!("Response data is broken: {:?}", err))
+    };
+
+    match challenge.status {
+        400...500 => return Err(format!("Got error code: {}", challenge.status)),
+        200 => eprintln!("Got challenge, OK"),
+        _ => println!("wtf")
+    };
+
+    eprintln!("Got status {} challenge {}", challenge.status, challenge.message);
+    Ok(challenge.message)
 }
 
 // example Diesel usage
@@ -96,11 +176,14 @@ pub fn buzz_door(conn: db::Conn, _auth: Auth, door_id: i32) -> APIResponse {
 
     match door_res {
         Ok(door_data) => {
-            // TODO: make an async call to the device
+            // TODO: make it async
+            let challenge = String::from(get_challenge().unwrap());
+            let buzz_result = buzz(challenge).unwrap();
+            eprintln!(">>> Buzz result is: {}", buzz_result);
+
             let resp_data = json!({
-                "status": "ok",
-                "detail": format!("Buzzing door {} on endpoint {}",
-                                  door_data.id, door_data.address)
+                "status": "OK",
+                "detail": format!("Buzzing door {}: {}", door_data.id, buzz_result)
             });
             ok().data(resp_data)
         },
@@ -183,4 +266,36 @@ mod tests {
         println!(">>> door {:?}", door);
         teardown();
     }
+
+    #[test]
+    fn test_calculate_code() {
+        use std::collections::HashMap;
+        use crate::routes::doors::calculate_code;
+        let values : HashMap<&str,i32> = [
+            ("284364", 351064),
+            ("310520", 743420),
+            ("41268", 434063),
+            ("68738", 360259),
+            ("69266", 209324),
+            ("27283", 528224),
+            ("49368", 573307),
+            ("46670", 865347),
+            ("73949", 278911),
+            ("83708", 180985),
+            ("14677", 748659),
+            ("62956", 126326),
+            ("18194", 632241),
+            ("43534", 564032)
+        ]
+            .iter()
+            .cloned()
+            .collect();
+
+        for (test_val, exp_val) in &values {
+            let code = test_val.to_string();
+            let res = calculate_code(code);
+            assert_eq!(exp_val, &res);
+        }
+    }
+
 }
