@@ -28,7 +28,7 @@ Install the ORM (Diesel) cli:
 ### Performs DB setup and migrations
 
 ``` bash
-$ sh env.sh <ROCKET_ENV> (test, staging, production)
+$ sh env.sh <ROCKET_ENV> (dev, staging, production)
 $ diesel setup
 $ diesel migration generate create_users
 ```
@@ -54,6 +54,25 @@ or
 ### Running the server
 
 `cargo run`
+
+### Deployment instructions
+
+#### Install Rust nightly
+
+``` bash
+$ curl https://sh.rustup.rs -sSf | sh
+$ rustup toolchain install nightly
+$ rustup override set nightly
+$ cargo install diesel_cli
+```
+
+### Get latest release package
+
+- `https://github.com/apiraino/open-taffeta/releases/`
+- `dpkg -i open-taffeta_x.y.z_amd64.deb`
+- Configure `.env_dev` with buzzer endpoint
+- `$ diesel setup`
+- `./open_taffeta_bin`
 
 ### Testing the endpoint
 

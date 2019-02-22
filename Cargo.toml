@@ -3,6 +3,9 @@ authors = ["apiraino <apiraino@users.noreply.github.com>", "kkom <kkom@users.nor
 name = "open-taffeta"
 version = "0.2.0"
 edition = "2018"
+description = "Raspberry Pi-hosted website controlling access to a building."
+readme = "README"
+license = "MIT"
 
 [lib]
 name = "open_taffeta_lib"
@@ -53,3 +56,19 @@ features = ["bundled"]
 # https://vfoley.xyz/rust-compile-speed-tips/
 [profile.dev]
 lto=false
+
+[package.metadata.deb]
+maintainer = "apiraino <apiraino@users.noreply.github.com>"
+copyright = "2018-2019, apiraino <apiraino@users.noreply.github.com>"
+# license-file = ["LICENSE", "4"]
+extended-description = "Raspberry Pi-hosted website controlling access to a building."
+depends = "$auto"
+section = "utility"
+priority = "optional"
+assets = [
+    ["target/release/open_taffeta_bin", "usr/bin/", "755"],
+    ["README.md", "usr/share/doc/open_taffeta/README", "644"],
+    [".env_dev", "usr/share/doc/open_taffeta/.env_dev", "644"],
+    [".env_prod", "usr/share/doc/open_taffeta/.env_prod", "644"],
+    ["migrations/*/*", "migrations/", "755"],
+]
