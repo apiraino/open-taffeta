@@ -11,6 +11,7 @@
 // any modules that might use them
 #[macro_use]
 pub mod config;
+pub mod crypto;
 
 mod db;
 // TODO: this is wrong, used only for tests
