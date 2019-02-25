@@ -1,0 +1,49 @@
+# FROM debian:buster-slim
+# FROM debian:jessie-slim
+FROM ubuntu:18.10
+
+ENV DATABASE_URL=test_app.db
+ENV ROCKET_ENV=dev
+ENV ROCKET_ADDRESS=0.0.0.0
+ENV ROCKET_PORT=8080
+
+WORKDIR /app
+
+RUN apt update && apt -y upgrade
+RUN apt install -y curl wget sqlite3
+RUN apt -yyq autoremove && \
+        apt clean -yyq && \
+        rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# install rust nightly
+RUN curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain nightly -y
+# equals to: source $HOME/.cargo/env
+ENV PATH="$PATH:/root/.cargo/bin"
+
+# needed to compile diesel-cli and cargo watch
+RUN apt update && apt install -y build-essential libsqlite3-dev
+
+# maybe also chrono and r2d2?
+RUN cargo install diesel_cli --force --no-default-features --features sqlite
+RUN cargo install cargo-watch
+
+# cleanup everything
+RUN apt purge -y build-essential libsqlite3-dev
+RUN apt -yyq autoremove && \
+        apt clean -yyq && \
+        rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Add files
+ADD open-taffeta_0.2.0_amd64.deb /app
+ADD certs /app/certs
+ADD migrations /app/migrations
+ADD .env_dev /app
+ADD .env_prod /app
+
+RUN dpkg -i open-taffeta_0.2.0_amd64.deb
+RUN echo Configure .env_dev with buzzer endpoint ...
+RUN diesel migration run
+
+CMD open_taffeta_bin
+
+# EXPOSE 8080

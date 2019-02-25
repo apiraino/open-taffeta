@@ -68,7 +68,8 @@ priority = "optional"
 assets = [
     ["target/release/open_taffeta_bin", "usr/bin/", "755"],
     ["README.md", "usr/share/doc/open_taffeta/README", "644"],
-    [".env_dev", "usr/share/doc/open_taffeta/.env_dev", "644"],
-    [".env_prod", "usr/share/doc/open_taffeta/.env_prod", "644"],
-    ["migrations/*/*", "migrations/", "755"],
+    #[".env_dev", "usr/share/doc/open_taffeta/.env_dev", "644"],
+    #[".env_prod", "usr/share/doc/open_taffeta/.env_prod", "644"],
+    #["migrations/*/*", "migrations/", "755"],
+    #["certs/*", "/root/certs/", "755"],
 ]
