@@ -30,8 +30,8 @@ pub fn runner(env: Environment) -> Result<rocket::Rocket, String> {
     // default: localhost:8000
     let config = Config::build(env)
         .address("0.0.0.0")
-        .tls("certs/localhost.pem", "certs/localhost-key.pem")
-        .port(8080)
+        //.tls("certs/localhost.pem", "certs/localhost-key.pem")
+        // .port(8080)
         .finalize().unwrap();
 
     let rocket = rocket::custom(config)

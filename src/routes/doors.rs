@@ -36,7 +36,7 @@ struct ResponseData {
 
 fn buzz(challenge: String) -> Result<String, String> {
     // TODO make it async
-    // TODO check return reqwest::StatusCode
+    // TODO manage buzz1 (load timetable.txt) and buzz2
     let client = Client::new();
     let code = calculate_code(challenge.clone());
     let s = format!("{}/buzz1/{}", get_buzzer_url(), code.to_string());
@@ -48,14 +48,18 @@ fn buzz(challenge: String) -> Result<String, String> {
         Err(err) => return Err(format!("Error occurred when buzzing: {:?}", err))
     };
 
-    // can return 401
     let res : ResponseData = match response.json() {
         Ok(x) => x,
         Err(err) => return Err(format!("Response data is broken: {:?}", err))
     };
     eprintln!("Buzz returned: {}", res.message);
 
-    // dbg!((challenge, code.to_string()));
+    match res.status {
+        400...500 => return Err(format!("Got error code: {}", res.status)),
+        200 => eprintln!("OK"),
+        _ => ()
+    };
+
     Ok("success".to_string())
 }
 
@@ -168,7 +172,7 @@ pub fn buzz_door(conn: db::Conn, _auth: Auth, door_id: i32) -> APIResponse {
                 "status": "OK",
                 "detail": format!("Buzzing door {}: {}", door_data.id, buzz_result)
             });
-            ok().data(resp_data)
+            created().data(resp_data)
         },
         Err(err) => {
             let resp_data = json!({

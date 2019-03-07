@@ -139,7 +139,7 @@ fn test_buzz() {
             .header(AUTHORIZATION, HeaderValue::from_str(token.as_str()).unwrap())
             .send()
             .unwrap();
-        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response.status(), StatusCode::CREATED);
         i += 1;
         thread::sleep(sleep_time);
     }
