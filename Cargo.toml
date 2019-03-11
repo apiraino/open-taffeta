@@ -7,6 +7,33 @@ description = "Raspberry Pi-hosted website controlling access to a building."
 readme = "README"
 license = "MIT"
 
+[package.metadata.deb]
+maintainer = "apiraino <apiraino@users.noreply.github.com>"
+copyright = "2018-2019, apiraino <apiraino@users.noreply.github.com>"
+extended-description = "Raspberry Pi-hosted website controlling access to a building."
+depends = "$auto"
+section = "utility"
+priority = "optional"
+assets = [
+    ["target/release/open_taffeta_bin", "usr/bin/", "755"],
+    ["README.md", "usr/share/doc/open_taffeta/README", "644"],
+    #[".env_dev", "usr/share/doc/open_taffeta/.env_dev", "644"],
+    #[".env_prod", "usr/share/doc/open_taffeta/.env_prod", "644"],
+    #["migrations/*/*", "migrations/", "755"],
+]
+
+[package.metadata.deb.variants.x86]
+assets = [
+    ["target/i686-unknown-linux-gnu/release/open_taffeta_bin", "usr/bin/", "755"],
+    ["README.md", "usr/share/doc/open_taffeta/README", "644"],
+]
+
+[package.metadata.deb.variants.armv6]
+assets = [
+    ["target/arm-unknown-linux-gnueabihf/release/open_taffeta_bin", "usr/bin/", "755"],
+    ["README.md", "usr/share/doc/open_taffeta/README", "644"],
+]
+
 [lib]
 name = "open_taffeta_lib"
 path = "src/lib.rs"
@@ -41,7 +68,7 @@ chrono = { version = "0.4.6", features = ["serde"] }
 reqwest = "0.9.10"
 rand = "0.6.5"
 audit = "0.1.1"
-openssl = "0.10.16"
+openssl-sys = "0.9.41"
 sha1 = "0.6.0"
 
 [dependencies.rocket_contrib]
@@ -49,27 +76,16 @@ version = "0.4.0"
 default-features = false
 features = ["json"]
 
-[dependencies.libsqlite3-sys]
-version = "0.12.0"
-features = ["bundled"]
+# commented out for xcompiling for Raspi1
+#[dependencies.libsqlite3-sys]
+#version = "0.12.0"
+#features = ["bundled"]
+
+# commented out for xcompiling for Raspi1
+#[dependencies.openssl-sys]
+#version = "0.9.41"
+#features = ["bundled"]
 
 # https://vfoley.xyz/rust-compile-speed-tips/
 [profile.dev]
 lto=false
-
-[package.metadata.deb]
-maintainer = "apiraino <apiraino@users.noreply.github.com>"
-copyright = "2018-2019, apiraino <apiraino@users.noreply.github.com>"
-# license-file = ["LICENSE", "4"]
-extended-description = "Raspberry Pi-hosted website controlling access to a building."
-depends = "$auto"
-section = "utility"
-priority = "optional"
-assets = [
-    ["target/release/open_taffeta_bin", "usr/bin/", "755"],
-    ["README.md", "usr/share/doc/open_taffeta/README", "644"],
-    #[".env_dev", "usr/share/doc/open_taffeta/.env_dev", "644"],
-    #[".env_prod", "usr/share/doc/open_taffeta/.env_prod", "644"],
-    #["migrations/*/*", "migrations/", "755"],
-    #["certs/*", "/root/certs/", "755"],
-]
