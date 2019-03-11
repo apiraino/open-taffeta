@@ -11,7 +11,6 @@ use crate::auth::Auth;
 #[derive(Queryable, Clone, Serialize, Deserialize, Debug, Default, Insertable)]
 pub struct User {
     pub id: i32,
-    pub username: String,
     pub password: String,
     pub email: String,
     pub active: bool,
@@ -29,7 +28,6 @@ pub struct Door {
 #[derive(Deserialize, Serialize, Debug)]
 pub struct UserAuth {
     pub id: i32,
-    pub username: String,
     pub email: String,
     pub token: String,
 }
@@ -39,13 +37,12 @@ impl User {
         let exp = get_token_duration!();
         let token = Auth {
             id: self.id,
-            username: self.username.clone(),
+            email: self.email.clone(),
             exp: exp.timestamp(),
         }.token();
 
         UserAuth {
             id: self.id,
-            username: self.username.clone(),
             email: self.email.clone(),
             token,
         }

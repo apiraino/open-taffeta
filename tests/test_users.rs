@@ -29,7 +29,7 @@ fn test_create_user() {
     // check for 0 users
     state.assert_empty_users();
     // signup a user
-    let (_, token) = common::signup_user("josh", "josh@domain.com");
+    let (_, token) = common::signup_user("josh@domain.com");
     // check for 1 users
     let mut response = client
         .get(api_base_uri.join("/users").unwrap())
@@ -39,7 +39,6 @@ fn test_create_user() {
     assert_eq!(response.status(), StatusCode::OK);
     let resp_data : common::ResponseListUser = response.json().unwrap();
     assert_eq!(resp_data.users.len(), 1);
-    assert_eq!(resp_data.users[0].username, "josh");
     assert_eq!(resp_data.users[0].email, "josh@domain.com");
 }
 
@@ -48,7 +47,7 @@ fn test_list_users() {
     let state = DbState::new();
     state.clean_tables();
     state.create_user("inactive@domain.com", false);
-    let (_, token) = common::signup_user("josh", "josh@domain.com");
+    let (_, token) = common::signup_user("josh@domain.com");
     let api_base_uri = common::api_base_url();
     let client = Client::new();
 
@@ -78,7 +77,6 @@ fn test_signup() {
     DbState::new();
     let api_base_uri = common::api_base_url();
     let user_data = json!({
-        "username": "john",
         "password": "1234567",
         "email": "hey@email.com"
     });

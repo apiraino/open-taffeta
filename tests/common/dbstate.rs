@@ -28,14 +28,12 @@ impl DbState {
     // warning: "email" param colliding with fields in "open_taffeta_lib::schema::users::*" (duh)
     pub fn create_user(&self, email_fld: &str, is_active: bool) -> (User, String) {
         let mut test_user = User::default();
-        test_user.username = String::from("john");
         test_user.email = String::from(email_fld);
         let test_password = generate_password();
         test_user.password = test_password.clone();
 
         diesel::insert_into(users)
             .values((
-                username.eq(&test_user.username),
                 password.eq(&test_user.password),
                 email.eq(&test_user.email),
                 active.eq(is_active)

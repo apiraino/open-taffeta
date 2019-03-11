@@ -35,14 +35,13 @@ fn test_bad_auth() {
     assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
     let resp_str: &str = &response.text().unwrap().to_string();
     assert_eq!(resp_str.contains("Not authorized"), true);
-
 }
 
 #[test]
 fn test_create() {
     let state = DbState::new();
     let api_base_uri = common::api_base_url();
-    let (_, token) = common::signup_user("josh", "josh@domain.com");
+    let (_, token) = common::signup_user("josh@domain.com");
     let client = Client::new();
 
     // check for 0 doors
@@ -74,7 +73,7 @@ fn test_create() {
 fn test_delete() {
     let state = DbState::new();
     let api_base_uri = common::api_base_url();
-    let (_, token) = common::signup_user("josh", "josh@domain.com");
+    let (_, token) = common::signup_user("josh@domain.com");
     let client = Client::new();
 
     // check for 0 doors
@@ -111,7 +110,7 @@ fn test_buzz() {
 
     DbState::new();
     let api_base_uri = common::api_base_url();
-    let (_, token) = common::signup_user("josh", "josh@domain.com");
+    let (_, token) = common::signup_user("josh@domain.com");
     let client = Client::new();
 
     let payload = json!({

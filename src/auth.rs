@@ -15,7 +15,7 @@ pub struct Auth {
     pub exp: i64,
     /// user id
     pub id: i32,
-    pub username: String,
+    pub email: String,
 }
 
 impl Auth {
@@ -26,7 +26,7 @@ impl Auth {
         let payload = Auth {
             exp: 10_000_000_000,
             id: self.id,
-            username: self.username.to_string()
+            email: self.email.to_string()
         };
         jwt::encode(
             &header,

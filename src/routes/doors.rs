@@ -16,7 +16,7 @@ use crate::schema::doors;
 use crate::schema::doors::dsl::*;
 use crate::responses::{bad_request, ok, no_content, created, APIResponse};
 use crate::config::get_buzzer_url;
-use crate::crypto::calculate_code;
+use crate::crypto::calculate_hash;
 
 // https://jsdw.me/posts/rust-asyncawait-preview/
 
@@ -38,7 +38,7 @@ fn buzz(challenge: String) -> Result<String, String> {
     // TODO make it async
     // TODO manage buzz1 (load timetable.txt) and buzz2
     let client = Client::new();
-    let code = calculate_code(challenge.clone());
+    let code = calculate_hash(challenge.clone());
     let s = format!("{}/buzz1/{}", get_buzzer_url(), code.to_string());
     let url = Url::parse(&s).unwrap();
     let data = json!({"message": challenge});

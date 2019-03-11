@@ -20,7 +20,6 @@ use crate::auth::Auth;
 #[derive(Serialize, Deserialize, Validate, Debug, Insertable)]
 #[table_name = "users"]
 pub struct NewUser {
-    username: String,
     #[validate(
         length(min = "6", message = "Password too short"),
         custom = "validate_pwd_strength"
@@ -88,7 +87,6 @@ pub fn get_user(conn: db::Conn, _auth: Auth, user_id: i32) -> APIResponse {
 #[post("/signup", data = "<user_data>", format = "application/json")]
 pub fn signup_user(conn: db::Conn, user_data: Json<NewUser>) -> APIResponse {
     let new_user = NewUser {
-        username: user_data.username.clone(),
         password: user_data.password.clone(),
         email: user_data.email.clone(),
     };
@@ -130,9 +128,9 @@ pub fn signup_user(conn: db::Conn, user_data: Json<NewUser>) -> APIResponse {
         }
         Ok(_) => {
             let user: User = users
-                .filter(username.eq(&new_user.username))
+                .filter(email.eq(&new_user.email))
                 .first(&*conn)
-                .unwrap_or_else(|_| panic!("error getting user with username {}", new_user.username));
+                .unwrap_or_else(|_| panic!("error getting user with email {}", new_user.email));
 
             let user_auth = user.to_user_auth();
             let resp_data = json!({ "user": user_auth });

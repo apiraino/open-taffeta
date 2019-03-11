@@ -37,7 +37,6 @@ pub struct ResponseUserDetail {
 pub struct User {
     pub id: i32,
     pub active: bool,
-    pub username: String,
     pub password: String,
     pub email: String
 }
@@ -60,11 +59,10 @@ pub fn api_base_url() -> Url {
     Url::parse(&server_base_url).unwrap()
 }
 
-pub fn signup_user(username: &str, email: &str) -> (Value, String) {
+pub fn signup_user(email: &str) -> (Value, String) {
     let client = Client::new();
     let api_base_uri = api_base_url();
     let user_data = json!({
-        "username": username,
         "password": generate_password(),
         "email": email
     });
@@ -78,7 +76,6 @@ pub fn signup_user(username: &str, email: &str) -> (Value, String) {
     let token = resp_data.user.token;
     let user_data = json!({
         "id": resp_data.user.id,
-        "username": resp_data.user.username,
         "email": resp_data.user.email
     });
     (user_data, token)
