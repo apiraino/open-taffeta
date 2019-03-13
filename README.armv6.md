@@ -2,8 +2,7 @@
 
 ### Install Raspi1 compile toolchain and Rust target
 
-# does not work on Ubuntu
-# sudo apt install gcc-arm-linux-gnueabihf
+$ sudo apt install gcc-arm-linux-gnueabihf
 
 $ rustup target add arm-unknown-linux-gnueabihf
 $ git clone --depth=1 https://github.com/raspberrypi/tools raspberrypi-tools
