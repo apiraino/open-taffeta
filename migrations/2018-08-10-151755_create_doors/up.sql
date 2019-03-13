@@ -6,4 +6,5 @@ CREATE TABLE doors (
     ring_ts INTEGER
 );
 
-INSERT INTO doors (name, address) VALUES ("front-door", "https://buzzer.mydomain.de");
+-- example
+-- INSERT INTO doors (name, address) VALUES ("front-door", "https://buzzer.mydomain.de");

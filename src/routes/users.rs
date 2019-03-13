@@ -16,6 +16,7 @@ use validator::{Validate, ValidationError};
 use validator_derive::Validate;
 use serde_derive::{Serialize, Deserialize};
 use crate::auth::Auth;
+use crate::crypto;
 
 #[derive(Serialize, Deserialize, Validate, Debug, Insertable)]
 #[table_name = "users"]
@@ -87,7 +88,7 @@ pub fn get_user(conn: db::Conn, _auth: Auth, user_id: i32) -> APIResponse {
 #[post("/signup", data = "<user_data>", format = "application/json")]
 pub fn signup_user(conn: db::Conn, user_data: Json<NewUser>) -> APIResponse {
     let new_user = NewUser {
-        password: user_data.password.clone(),
+        password: crypto::hash_password(user_data.password.clone()),
         email: user_data.email.clone(),
     };
 
