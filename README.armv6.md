@@ -28,7 +28,7 @@ $ wget https://www.sqlite.org/2019/sqlite-autoconf-3270200.tar.gz
 $ tar xvzf sqlite-autoconf-3160200.tar.gz
 $ cd sqlite-autoconf-3160200
 $ ./configure --enable-shared --host=arm-linux CC=$ARMV6_LINKER
-$ make -j 8
+$ make -j8
 
 ### Compile OpenTaffeta for armv6
 

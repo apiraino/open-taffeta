@@ -1,1 +1,2 @@
+ROCKET_ENV=prod
 DATABASE_URL="app.db"

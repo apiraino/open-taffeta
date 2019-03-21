@@ -1,0 +1,9 @@
+[Unit]
+Description=Open Taffeta Server
+
+[Service]
+WorkingDirectory=/etc/open-taffeta
+EnvironmentFile=/etc/open-taffeta/settings
+Environment=RUST_BACKTRACE=1
+Environment=ROCKET_ENV=prod
+ExecStart=/usr/bin/open-taffeta

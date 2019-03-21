@@ -3,44 +3,44 @@ authors = ["apiraino <apiraino@users.noreply.github.com>", "kkom <kkom@users.nor
 name = "open-taffeta"
 version = "0.2.0"
 edition = "2018"
-description = "Raspberry Pi-hosted website controlling access to a building."
+description = "Self-hosted website controlling access to a building."
 readme = "README"
 license = "MIT"
 
 [package.metadata.deb]
 maintainer = "apiraino <apiraino@users.noreply.github.com>"
 copyright = "2018-2019, apiraino <apiraino@users.noreply.github.com>"
-extended-description = "Raspberry Pi-hosted website controlling access to a building."
+extended-description = "Self-hosted website controlling access to a building."
 depends = "$auto"
 section = "utility"
 priority = "optional"
 assets = [
-    ["target/release/open_taffeta_bin", "usr/bin/", "755"],
-    ["README.md", "usr/share/doc/open_taffeta/README", "644"],
-    #[".env_dev", "usr/share/doc/open_taffeta/.env_dev", "644"],
-    #[".env_prod", "usr/share/doc/open_taffeta/.env_prod", "644"],
+    ["target/release/open-taffeta", "usr/bin/", "755"],
+    ["README.md", "usr/share/doc/open-taffeta/README", "644"],
+    ["scripts/open-taffeta.service","etc/systemd/system/","644"],
+    ["scripts/settings","etc/open-taffeta/settings","644"],
+    ["Rocket.toml","etc/open-taffeta/Rocket.toml","644"],
+    ["app.db","etc/open-taffeta/app.db","644"],
+    #[".env_dev", "usr/share/doc/open-taffeta/.env_dev", "644"],
+    #[".env_prod", "usr/share/doc/open-taffeta/.env_prod", "644"],
     #["migrations/*/*", "migrations/", "755"],
 ]
 
 [package.metadata.deb.variants.x86]
 assets = [
-    ["target/i686-unknown-linux-gnu/release/open_taffeta_bin", "usr/bin/", "755"],
-    ["README.md", "usr/share/doc/open_taffeta/README", "644"],
+    ["target/i686-unknown-linux-gnu/release/open-taffeta", "usr/bin/", "755"],
+    ["README.md", "usr/share/doc/open-taffeta/README", "644"],
 ]
 
 [package.metadata.deb.variants.armv6]
 assets = [
-    ["target/arm-unknown-linux-gnueabihf/release/open_taffeta_bin", "usr/bin/", "755"],
-    ["README.md", "usr/share/doc/open_taffeta/README", "644"],
+    ["target/arm-unknown-linux-gnueabihf/release/open-taffeta", "usr/bin/", "755"],
+    ["README.md", "usr/share/doc/open-taffeta/README", "644"],
 ]
 
 [lib]
 name = "open_taffeta_lib"
 path = "src/lib.rs"
-
-[[bin]]
-name = "open_taffeta_bin"
-path = "src/main.rs"
 
 [dependencies]
 rocket = { version = "0.4.0", features = ["tls"] }
@@ -86,6 +86,6 @@ features = ["json"]
 #version = "0.9.41"
 #features = ["bundled"]
 
-# https://vfoley.xyz/rust-compile-speed-tips/
+# https://vfoley.xyz/rust-compile-speed-tips/#avoid-lto
 [profile.dev]
 lto=false
