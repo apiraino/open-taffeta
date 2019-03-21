@@ -87,8 +87,8 @@ pub fn get_user(conn: db::Conn, _auth: Auth, user_id: i32) -> APIResponse {
 
 #[post("/signup", data = "<user_data>", format = "application/json")]
 pub fn signup_user(conn: db::Conn, user_data: Json<NewUser>) -> APIResponse {
-    let new_user = NewUser {
-        password: crypto::hash_password(user_data.password.clone()),
+    let mut new_user = NewUser {
+        password: user_data.password.clone(),
         email: user_data.email.clone(),
     };
 
@@ -102,6 +102,7 @@ pub fn signup_user(conn: db::Conn, user_data: Json<NewUser>) -> APIResponse {
         });
         bad_request().data(resp_data);
     }
+    new_user.password = crypto::hash_password(new_user.password);
 
     match diesel::insert_into(users).values(&new_user).execute(&*conn) {
         Err(err) => {

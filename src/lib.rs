@@ -22,19 +22,20 @@ mod routes;
 pub mod schema;
 mod auth;
 
-use rocket::config::{Config, Environment};
+use rocket::config::Environment;
 
-pub fn runner(env: Environment) -> Result<rocket::Rocket, String> {
+pub fn runner(_env: Environment) -> Result<rocket::Rocket, String> {
     let pool = db::init_pool();
 
+    // example custom config
     // default: localhost:8000
-    let config = Config::build(env)
-        .address("0.0.0.0")
-        //.tls("certs/localhost.pem", "certs/localhost-key.pem")
-        // .port(8080)
-        .finalize().unwrap();
+    // let config = Config::build(env)
+    //     .address("0.0.0.0")
+    //     .tls("certs/localhost.pem", "certs/localhost-key.pem")
+    //     .port(8888)
+    //     .finalize().unwrap();
 
-    let rocket = rocket::custom(config)
+    let rocket = rocket::ignite()
         // mount the routes
         .mount(
             "/",

@@ -18,7 +18,6 @@ fn main() {
 
     let env = match deploy_env.as_ref() {
         "prod" => Environment::Production,
-        "stage" => Environment::Staging,
         "dev" => Environment::Development,
         _ => Environment::Development
     };

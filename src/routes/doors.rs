@@ -15,7 +15,6 @@ use crate::schema::doors;
 // https://gitter.im/diesel-rs/diesel?at=5b74459749932d4fe4e690b8
 use crate::schema::doors::dsl::*;
 use crate::responses::{bad_request, ok, no_content, created, APIResponse};
-use crate::config::get_buzzer_url;
 use crate::crypto::calculate_hash;
 
 // https://jsdw.me/posts/rust-asyncawait-preview/
@@ -34,12 +33,12 @@ struct ResponseData {
     message: String
 }
 
-fn buzz(challenge: String) -> Result<String, String> {
+fn buzz(challenge: String, door_buzzer_url: String) -> Result<String, String> {
     // TODO make it async
     // TODO manage buzz1 (load timetable.txt) and buzz2
     let client = Client::new();
     let code = calculate_hash(challenge.clone());
-    let s = format!("{}/buzz1/{}", get_buzzer_url(), code.to_string());
+    let s = format!("{}/buzz1/{}", door_buzzer_url, code.to_string());
     let url = Url::parse(&s).unwrap();
     let data = json!({"message": challenge});
 
@@ -63,11 +62,10 @@ fn buzz(challenge: String) -> Result<String, String> {
     Ok("success".to_string())
 }
 
-pub fn get_challenge() -> Result<String, String> {
+pub fn get_challenge(door_buzzer_url: String) -> Result<String, String> {
     // TODO make it async
     let client = Client::new();
-    let s = format!("{}/challenge", get_buzzer_url());
-    // eprintln!(">>> calling {}", s);
+    let s = format!("{}/challenge", door_buzzer_url);
     let url = Url::parse(&s).unwrap();
 
     let mut response = match client.post(url).send() {
@@ -107,9 +105,9 @@ pub fn create_door(conn: db::Conn, _auth: Auth, door_data: Json<NewDoor>) -> API
     if let Err(diesel::result::Error::DatabaseError(DatabaseErrorKind::UniqueViolation, _)) =
         insert_result
     {
-        println!(">>> door with name {} already exist", &new_door.name);
+        eprintln!(">>> door with name {} already exist", &new_door.name);
     } else {
-        println!(">>> door with name {} created", &new_door.name);
+        eprintln!(">>> door with name {} created", &new_door.name);
     }
     let door: Door = doors
         .filter(name.eq(&new_door.name))
@@ -163,9 +161,9 @@ pub fn buzz_door(conn: db::Conn, _auth: Auth, door_id: i32) -> APIResponse {
 
     match door_res {
         Ok(door_data) => {
-            // TODO: make it async
-            let challenge = String::from(get_challenge().unwrap());
-            let buzz_result = buzz(challenge).unwrap();
+            // TODO: make these async
+            let challenge = String::from(get_challenge(door_data.buzzer_url.clone()).unwrap());
+            let buzz_result = buzz(challenge, door_data.buzzer_url).unwrap();
             eprintln!(">>> Buzz result is: {}", buzz_result);
 
             let resp_data = json!({

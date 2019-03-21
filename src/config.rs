@@ -11,7 +11,3 @@ macro_rules! get_token_duration {
         chrono::Utc::now() + chrono::Duration::days(60)
     };
 }
-
-pub fn get_buzzer_url() -> String {
-    env::var("BUZZER_URL").expect("Could not find BUZZER_URL in env")
-}

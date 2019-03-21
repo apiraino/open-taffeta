@@ -3,6 +3,7 @@ table! {
         id -> Integer,
         name -> Text,
         address -> Text,
+        buzzer_url -> Text,
         ring -> Bool,
         ring_ts -> Nullable<Integer>,
     }
