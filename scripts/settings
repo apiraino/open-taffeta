@@ -1,2 +1,4 @@
 ROCKET_ENV=prod
 DATABASE_URL="app.db"
+# openssl rand -base64 32
+SECRET="aaabbbcccdddeee......"

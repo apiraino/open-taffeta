@@ -1,13 +1,12 @@
-// TODO: Load from env
-// https://rocket.rs/v0.4/guide/configuration/
 use std::env;
-
-// openssl rand -base64 32
-pub const SECRET : &str = "Bgi/R1Lrznre9MINinMAXSaIVCXKSE+efLFFkx6dfPQ=";
 
 #[macro_export]
 macro_rules! get_token_duration {
     () => {
         chrono::Utc::now() + chrono::Duration::days(60)
     };
+}
+
+pub fn get_secret() -> String {
+    env::var("SECRET").expect("SECRET env var")
 }

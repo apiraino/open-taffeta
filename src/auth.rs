@@ -5,9 +5,9 @@ use rocket::request::{self, FromRequest, Request};
 use rocket::http::Status;
 // Need serde directly, rocket_contrib export is still WIP
 use serde_derive::{Serialize, Deserialize};
-use crate::config;
 use jsonwebtoken as jwt;
 use self::jwt::{Header, Algorithm};
+use crate::config;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Auth {
@@ -31,7 +31,7 @@ impl Auth {
         jwt::encode(
             &header,
             &payload,
-            config::SECRET.as_ref()
+            config::get_secret().as_ref()
         ).expect("jwt encoding failed")
     }
 }
@@ -58,7 +58,7 @@ fn extract_auth_from_request(request: &Request) -> Option<Auth> {
     if let Some(token) = header {
         match jwt::decode::<Auth>(
             &token.to_string(),
-            config::SECRET.as_ref(),
+            config::get_secret().as_ref(),
             &jwt::Validation::new(Algorithm::HS512),
         ) {
             Err(err) => {
