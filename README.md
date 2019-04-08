@@ -21,7 +21,13 @@ Install sources (in case you want to use linting tools like `racer` or RLS):
 
 `rustup component add rust-src`
 
+### Additional libraries
+
+Install `libssl-dev` to compile OpenSSL, `libmysqlclient-dev` to install `diesel-cli`.
+
 ### Additional tooling for this project
+
+Install `cargo-edit` (to get `cargo add` superpowers) and `cargo-deb`.
 
 Install the ORM (Diesel) cli:
 
@@ -74,7 +80,7 @@ $ cargo install diesel_cli
 - `dpkg -i open-taffeta_x.y.z_amd64.deb`
 - Configure `.env_dev` with buzzer endpoint
 - `$ diesel setup`
-- `./open_taffeta_bin`
+- `sudo systemctl start open-taffeta`
 
 ### Testing the endpoint
 
