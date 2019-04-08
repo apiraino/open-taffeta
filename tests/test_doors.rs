@@ -49,7 +49,8 @@ fn test_create() {
 
     let payload = json!({
         "name":"door123",
-        "address": "https://buzzer.somewhere.de"
+        "address": "https://buzzer.somewhere.de",
+        "buzzer_url": "http://111.222.333.444"
     });
     let response = client
         .post(api_base_uri.join("/door").unwrap())
@@ -81,7 +82,8 @@ fn test_delete() {
 
     let payload = json!({
         "name":"door123",
-        "address": "https://buzzer.somewhere.de"
+        "address": "https://buzzer.somewhere.de",
+        "buzzer_url": "http://111.222.333.444"
     });
     let mut response = client
         .post(api_base_uri.join("/door").unwrap())
@@ -106,7 +108,6 @@ fn test_delete() {
 // only available for local testing
 // #[test]
 fn test_buzz() {
-    use open_taffeta_lib::config::get_buzzer_url;
 
     DbState::new();
     let api_base_uri = common::api_base_url();
@@ -115,7 +116,7 @@ fn test_buzz() {
 
     let payload = json!({
         "name": "door123",
-        "address": get_buzzer_url()
+        "address": "https://buzzer.somewhere.de"
     });
     let mut response = client
         .post(api_base_uri.join("/door").unwrap())

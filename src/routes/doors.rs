@@ -25,6 +25,7 @@ pub struct NewDoor {
     #[validate(length(min = "4"))]
     name: String,
     address: String,
+    buzzer_url: String,
 }
 
 #[derive(Deserialize, Debug)]
@@ -96,6 +97,7 @@ pub fn create_door(conn: db::Conn, _auth: Auth, door_data: Json<NewDoor>) -> API
     let new_door = NewDoor {
         name: door_data.name.clone(),
         address: door_data.address.clone(),
+        buzzer_url: door_data.buzzer_url.clone(),
     };
 
     // TODO: also try `get_result()` here
@@ -200,7 +202,8 @@ mod tests {
     fn add_test_door(conn: &SqliteConnection) -> Door {
         let new_door = NewDoor {
             name: String::from("test-door"),
-            address: String::from("https://buzzer.whatever.de")
+            address: String::from("https://buzzer.whatever.de"),
+            buzzer_url: String::from("http://111.222.333.444")
         };
 
         let insert_res = diesel::insert_into(doors).values(&new_door).execute(conn);

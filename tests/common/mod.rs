@@ -1,10 +1,9 @@
 extern crate rand;
-extern crate crypto;
+extern crate crypto_hash;
 extern crate open_taffeta_lib;
 
 use rand::distributions::Alphanumeric;
-use rand::{thread_rng, Rng};
-use crypto::pbkdf2::pbkdf2_simple;
+use rand::Rng;
 use std::env;
 
 use reqwest::{Url, Client, StatusCode};
@@ -82,6 +81,8 @@ pub fn signup_user(email: &str) -> (Value, String) {
 }
 
 pub fn generate_password() -> String {
-    let password: String = thread_rng().sample_iter(&Alphanumeric).take(10).collect();
-    pbkdf2_simple(&password, 5000).unwrap()
+    rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(10)
+        .collect::<String>()
 }
