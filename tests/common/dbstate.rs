@@ -4,7 +4,6 @@ extern crate open_taffeta_lib;
 use crate::common::dbstate::diesel::sqlite::SqliteConnection;
 // this re-exports `.eq` from `diesel::ExpressionMethods`
 use crate::common::dbstate::diesel::prelude::*;
-use crate::common::generate_password;
 
 use std::env;
 
@@ -29,7 +28,7 @@ impl DbState {
     pub fn create_user(&self, email_fld: &str, is_active: bool) -> (User, String) {
         let mut test_user = User::default();
         test_user.email = String::from(email_fld);
-        let test_password = generate_password();
+        let test_password = open_taffeta_lib::config::generate_password();
         test_user.password = test_password.clone();
 
         diesel::insert_into(users)

@@ -2,8 +2,6 @@ extern crate rand;
 extern crate crypto_hash;
 extern crate open_taffeta_lib;
 
-use rand::distributions::Alphanumeric;
-use rand::Rng;
 use std::env;
 
 use reqwest::{Url, Client, StatusCode};
@@ -62,7 +60,7 @@ pub fn signup_user(email: &str) -> (Value, String) {
     let client = Client::new();
     let api_base_uri = api_base_url();
     let user_data = json!({
-        "password": generate_password(),
+        "password": open_taffeta_lib::config::generate_password(),
         "email": email
     });
     let mut response = client
@@ -78,11 +76,4 @@ pub fn signup_user(email: &str) -> (Value, String) {
         "email": resp_data.user.email
     });
     (user_data, token)
-}
-
-pub fn generate_password() -> String {
-    rand::thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(10)
-        .collect::<String>()
 }
