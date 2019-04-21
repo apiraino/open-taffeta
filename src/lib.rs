@@ -44,6 +44,7 @@ pub fn runner(_env: Environment) -> Result<rocket::Rocket, String> {
                 routes::all::get_index,
                 routes::users::get_users,
                 routes::users::get_user,
+                routes::users::login_user,
                 routes::users::signup_user,
                 routes::doors::create_door,
                 routes::doors::get_doors,

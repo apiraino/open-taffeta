@@ -111,3 +111,67 @@ fn test_signup() {
     let resp_data: common::ResponseError = response.json().unwrap();
     assert_eq!(resp_data.detail.contains("record already exists"), true);
 }
+
+#[test]
+fn test_login() {
+    DbState::new();
+    let api_base_uri = common::api_base_url();
+    let user_data = json!({
+        "password": "1234567",
+        "email": "hey@email.com"
+    });
+    let client = Client::new();
+    let mut response = client
+        .post(api_base_uri.join("/signup").unwrap())
+        .json(&user_data)
+        .send()
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::CREATED);
+    let resp_data: common::ResponseSignup = response.json().unwrap();
+    let user_id = resp_data.user.id;
+    let token = resp_data.user.token;
+
+    // login again
+    let url = &format!("/login");
+    response = client
+        .post(api_base_uri.join(url).unwrap())
+        .json(&user_data)
+        .send()
+        .expect("thought it worked...");
+    assert_eq!(response.status(), StatusCode::OK);
+    let resp_data: common::ResponseSignup = response.json().unwrap();
+    assert_eq!(resp_data.user.id, user_id);
+}
+
+#[test]
+fn test_login_jwt() {
+    DbState::new();
+    let api_base_uri = common::api_base_url();
+    let user_data = json!({
+        "password": "1234567",
+        "email": "hey@email.com"
+    });
+    let client = Client::new();
+    let mut response = client
+        .post(api_base_uri.join("/signup").unwrap())
+        .json(&user_data)
+        .send()
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::CREATED);
+    let resp_data: common::ResponseSignup = response.json().unwrap();
+    let user_id = resp_data.user.id;
+    let token = resp_data.user.token;
+
+    // login again
+    let url = &format!("/login");
+    response = client
+        .post(api_base_uri.join(url).unwrap())
+        .json(&user_data)
+        .send()
+        .expect("thought it worked...");
+    assert_eq!(response.status(), StatusCode::OK);
+    let resp_data: common::ResponseSignup = response.json().unwrap();
+    assert_eq!(resp_data.user.id, user_id);
+    // TODO: enable me after JWT refactor
+    assert_ne!(resp_data.user.token, token);
+}

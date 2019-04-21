@@ -85,6 +85,31 @@ pub fn get_user(conn: db::Conn, _auth: Auth, user_id: i32) -> APIResponse {
     ok().data(json!({ "user": user[0] }))
 }
 
+#[post("/login", data = "<user_data>", format = "application/json")]
+pub fn login_user(conn: db::Conn, user_data: Json<NewUser>) -> APIResponse {
+    let logmein = NewUser {
+        password: user_data.password.clone(),
+        email: user_data.email.clone(),
+    };
+
+    let user: Vec<User> = users
+        .filter(active.eq(true))
+        .filter(email.eq(logmein.email.clone()))
+        .load(&*conn)
+        .unwrap_or_else(|_| panic!("error retrieving user email={}", logmein.email));
+
+    if user.len() != 1 {
+        let resp_data = json!({
+            "status": "error",
+            "detail": format!("Wrong records count found ({}) for email={}",
+                              user.len(), logmein.email)
+        });
+        bad_request().data(resp_data);
+    }
+    let user_auth = user[0].to_user_auth();
+    ok().data(json!({ "user": user_auth }))
+}
+
 #[post("/signup", data = "<user_data>", format = "application/json")]
 pub fn signup_user(conn: db::Conn, user_data: Json<NewUser>) -> APIResponse {
     let mut new_user = NewUser {
@@ -132,7 +157,7 @@ pub fn signup_user(conn: db::Conn, user_data: Json<NewUser>) -> APIResponse {
             let user: User = users
                 .filter(email.eq(&new_user.email))
                 .first(&*conn)
-                .unwrap_or_else(|_| panic!("error getting user with email {}", new_user.email));
+                .unwrap_or_else(|_| panic!("error getting user with email={}", new_user.email));
 
             let user_auth = user.to_user_auth();
             let resp_data = json!({ "user": user_auth });
