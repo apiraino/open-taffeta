@@ -31,7 +31,7 @@ Install `cargo-edit` (to get `cargo add` superpowers) and `cargo-deb`.
 
 Install the ORM (Diesel) cli:
 
-`cargo install diesel_cli`
+`cargo install diesel_cli --no-default-features --features sqlite`
 
 ### Performs DB setup and migrations
 

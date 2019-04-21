@@ -1,5 +1,3 @@
-#!/bin/bash
-
 ### Install Raspi1 compile toolchain and Rust target
 
 $ sudo apt install gcc-arm-linux-gnueabihf
@@ -60,16 +58,6 @@ PKG_CONFIG_ALLOW_CROSS=1 cargo deb --target=$TARGET --variant=armv6
 $ file target/arm-unknown-linux-gnueabi/release/open_taffeta_bin
 target/arm-unknown-linux-gnueabi/release/open_taffeta_bin: ELF 32-bit LSB shared object, ARM, EABI5 version 1 (SYSV), dynamically linked, interpreter /lib/ld-linux.so.3, for GNU/Linux 3.2.0, BuildID[sha1]=3f649be3c815967715225c9aa34193c1adbcb42b, with debug_info, not stripped
 ```
-
-pi@raspberrypi:~ $ sudo dpkg -i open-taffeta-armv6_0.2.0_armel.deb
-dpkg: error processing archive open-taffeta-armv6_0.2.0_armel.deb (--install):
-package architecture (armel) does not match system (armhf)
-Errors were encountered while processing:
-open-taffeta-armv6_0.2.0_armel.deb
-
-Recompile for `arm-unknown-linux-gnueabihf`
-
-/home/user/open-taffeta/target/arm-unknown-linux-gnueabihf/release/deps/open_taffeta_bin-0649e7dd72beaf7e.open_taffeta_bin.8268kb7c-cgu.0.rcgu.o: error adding symbols: file in wrong format
 
 #### Error
 ```
