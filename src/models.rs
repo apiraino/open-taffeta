@@ -13,6 +13,7 @@ pub struct User {
     pub id: i32,
     pub password: String,
     pub email: String,
+    // TODO: rename this field to "is_active" ffs
     pub active: bool
 }
 
@@ -21,6 +22,7 @@ pub struct UserAuth {
     pub id: i32,
     pub email: String,
     pub token: String,
+    // TODO: rename this field to "is_active" ffs
     pub active: bool,
 }
 
@@ -35,13 +37,16 @@ pub struct Door {
 }
 
 impl User {
+
+    // generate tokens for signup + logins
     pub fn to_user_auth(&self) -> UserAuth {
-        let exp = get_token_duration!();
-        let token = Auth {
-            id: self.id,
-            email: self.email.clone(),
-            exp: exp.timestamp(),
-        }.token();
+        let auth = Auth::new(
+            self.id,
+            self.email.clone()
+        );
+        let token = auth.generate_token();
+        eprintln!("DBG: generated token: {}", token);
+        auth.save_auth_token(&token);
 
         UserAuth {
             id: self.id,

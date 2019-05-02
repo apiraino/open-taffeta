@@ -56,7 +56,6 @@ rocket_cors = "0.4.0"
 validator = "0.8.0"
 validator_derive = "0.8.0"
 
-jsonwebtoken = "5.0.1"
 slug = "0.1.4"
 
 diesel = { version = "1.4.1", features = ["chrono", "sqlite", "r2d2"] }

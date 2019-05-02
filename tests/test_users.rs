@@ -196,7 +196,7 @@ fn test_user_login() {
 }
 
 #[test]
-fn test_user_login_jwt() {
+fn test_user_login_generate_auth_token() {
     let state = DbState::new();
     let api_base_uri = common::api_base_url();
     let client = Client::new();
@@ -219,4 +219,9 @@ fn test_user_login_jwt() {
     let resp_data: ResponseLoginSignup = response.json().unwrap();
     assert_eq!(resp_data.user.id, user_id);
     assert_ne!(resp_data.user.token, token);
+}
+
+#[test]
+fn test_user_login_rotate_auth_token() {
+    assert!(true, "TODO: login 5 times, check token rotation");
 }

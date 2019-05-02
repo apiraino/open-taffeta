@@ -3,6 +3,8 @@ use rand::prelude::*;
 use rand::distributions::Alphanumeric;
 
 pub const TOKEN_LIFETIME : i64 = 10_000_000_000;
+// TODO: wrestle with lifetimes ...
+// pub const CLIENT_TYPE_WEB : &str = "client-type-web";
 
 #[macro_export]
 macro_rules! get_token_duration {
