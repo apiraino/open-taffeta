@@ -8,11 +8,19 @@ use serde_derive::{Serialize, Deserialize};
 use crate::schema::users;
 use crate::auth::Auth;
 
-#[derive(Queryable, Clone, Serialize, Deserialize, Debug, Default, Insertable)]
+#[derive(Queryable, Clone, Serialize, Deserialize, Debug, Default, Insertable, AsChangeset, Identifiable, PartialEq)]
 pub struct User {
     pub id: i32,
     pub password: String,
     pub email: String,
+    pub active: bool
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+pub struct UserAuth {
+    pub id: i32,
+    pub email: String,
+    pub token: String,
     pub active: bool,
 }
 
@@ -24,13 +32,6 @@ pub struct Door {
     pub buzzer_url: String,
     pub ring: bool,
     pub ring_ts: Option<i32>,
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-pub struct UserAuth {
-    pub id: i32,
-    pub email: String,
-    pub token: String,
 }
 
 impl User {
@@ -45,7 +46,8 @@ impl User {
         UserAuth {
             id: self.id,
             email: self.email.clone(),
-            token,
+            token: token,
+            active: self.active
         }
     }
 }

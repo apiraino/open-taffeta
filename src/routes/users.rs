@@ -20,14 +20,14 @@ use crate::crypto;
 
 #[derive(Serialize, Deserialize, Validate, Debug, Insertable)]
 #[table_name = "users"]
-pub struct NewUser {
+pub struct UserLoginSignup {
     #[validate(
         length(min = "6", message = "Password too short"),
         custom = "validate_pwd_strength"
     )]
     password: String,
     #[validate(email(message = "Invalid email"))]
-    email: String,
+    email: String
 }
 
 pub fn validate_pwd_strength(pwd: &str) -> Result<(), ValidationError> {
@@ -66,55 +66,61 @@ pub fn get_users(conn: db::Conn, _auth: Auth, is_active: Option<bool>) -> JsonVa
     json!({ "users": users_rs })
 }
 
-#[get("/user/<user_id>", format = "application/json")]
+#[get("/users/<user_id>", format = "application/json")]
 pub fn get_user(conn: db::Conn, _auth: Auth, user_id: i32) -> APIResponse {
-    let user: Vec<User> = users
-        .filter(active.eq(true))
+    let user : Result<User, diesel::result::Error> = users
+        // .filter(active.eq(true))
         .filter(id.eq(user_id))
-        .load(&*conn)
-        .unwrap_or_else(|_| panic!("error retrieving user id={}", user_id));
+        .get_result(&*conn);
 
-    if user.len() != 1 {
-        let resp_data = json!({
-            "status": "error",
-            "detail": format!("Wrong records count found ({}) for user_id={}",
-                              user.len(), user_id)
-        });
-        bad_request().data(resp_data);
+    match user {
+        Err(diesel::NotFound) => {
+            let resp_data = json!({
+                "status": "error",
+                "detail": format!("error retrieving active user id = {}", user_id)
+            });
+            bad_request().data(resp_data)
+        },
+        _ =>  {
+            ok().data(json!({ "user": user.expect("Unmanaged error while unwrapping user entity") }))
+        }
     }
-    ok().data(json!({ "user": user[0] }))
 }
 
 #[post("/login", data = "<user_data>", format = "application/json")]
-pub fn login_user(conn: db::Conn, user_data: Json<NewUser>) -> APIResponse {
-    let logmein = NewUser {
+pub fn login_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIResponse {
+    let logmein = UserLoginSignup {
         password: user_data.password.clone(),
-        email: user_data.email.clone(),
+        email: user_data.email.clone()
     };
 
+    let err_msg = format!("error retrieving active user with email={}", logmein.email);
     let user: Vec<User> = users
         .filter(active.eq(true))
         .filter(email.eq(logmein.email.clone()))
         .load(&*conn)
-        .unwrap_or_else(|_| panic!("error retrieving user email={}", logmein.email));
+        .expect(&err_msg);
 
-    if user.len() != 1 {
-        let resp_data = json!({
-            "status": "error",
-            "detail": format!("Wrong records count found ({}) for email={}",
-                              user.len(), logmein.email)
-        });
-        bad_request().data(resp_data);
+    match user.len() {
+        1 => {
+            ok().data(json!({ "user": user[0].to_user_auth() }))
+        },
+        _ => {
+            let resp_data = json!({
+                "status": "error",
+                "detail": format!("Wrong records count found ({}) for email={}",
+                                  user.len(), logmein.email)
+            });
+            bad_request().data(resp_data)
+        }
     }
-    let user_auth = user[0].to_user_auth();
-    ok().data(json!({ "user": user_auth }))
 }
 
 #[post("/signup", data = "<user_data>", format = "application/json")]
-pub fn signup_user(conn: db::Conn, user_data: Json<NewUser>) -> APIResponse {
-    let mut new_user = NewUser {
+pub fn signup_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIResponse {
+    let mut new_user = UserLoginSignup {
         password: user_data.password.clone(),
-        email: user_data.email.clone(),
+        email: user_data.email.clone()
     };
 
     let res = new_user.validate();

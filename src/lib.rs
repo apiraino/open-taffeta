@@ -13,11 +13,12 @@
 pub mod config;
 pub mod crypto;
 
-mod db;
+pub mod db;
 // TODO: this is wrong, used only for tests
 pub mod models;
+pub mod serializers;
 pub mod responses;
-mod routes;
+pub mod routes;
 // TODO: pub here is wrong, used only for tests
 pub mod schema;
 mod auth;
