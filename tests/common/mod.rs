@@ -5,48 +5,19 @@ extern crate open_taffeta_lib;
 use std::env;
 
 use reqwest::{Url, Client, StatusCode};
+use reqwest::header::{AUTHORIZATION, HeaderValue};
 
 // need "Value" because serde serializers
 // exported from Rocket 0.4 get compiler confused (?)
 // use rocket_contrib::json::JsonValue;
-use serde_json::Value;
-use serde_derive::{Deserialize};
-use open_taffeta_lib::models::{UserAuth, Door};
+// use serde_json::Value;
+// use serde_derive::{Deserialize};
+// use open_taffeta_lib::models::{UserAuth, Door, User};
+
+use open_taffeta_lib::serializers::users::{ResponseUserDetail, ResponseLoginSignup};
+use diesel::sqlite::SqliteConnection;
 
 pub mod dbstate;
-
-#[derive(Deserialize, Debug)]
-pub struct ResponseSignup {
-    pub user: UserAuth
-}
-
-#[derive(Deserialize, Debug)]
-pub struct ResponseListUser {
-    pub users: Vec<User>
-}
-
-#[derive(Deserialize, Debug)]
-pub struct ResponseUserDetail {
-    pub user: User
-}
-
-#[derive(Deserialize, Debug)]
-pub struct User {
-    pub id: i32,
-    pub active: bool,
-    pub password: String,
-    pub email: String
-}
-
-#[derive(Deserialize, Debug)]
-pub struct ResponseError {
-    pub detail: String
-}
-
-#[derive(Deserialize, Debug)]
-pub struct ResponseDoorCreated {
-    pub door: Door
-}
 
 pub fn api_base_url() -> Url {
     let server_base_url = match env::var("TEST_SERVER") {
@@ -56,7 +27,7 @@ pub fn api_base_url() -> Url {
     Url::parse(&server_base_url).unwrap()
 }
 
-pub fn signup_user(email: &str) -> (Value, String) {
+pub fn signup_user(conn: &SqliteConnection, email: &str, is_active: bool) -> (ResponseUserDetail, String, String) {
     let client = Client::new();
     let api_base_uri = api_base_url();
     let user_data = json!({
@@ -69,11 +40,28 @@ pub fn signup_user(email: &str) -> (Value, String) {
         .send()
         .unwrap();
     assert_eq!(response.status(), StatusCode::CREATED);
-    let resp_data : ResponseSignup = response.json().unwrap();
+    let resp_data : ResponseLoginSignup = response.json().expect("Error opening signup response");
     let token = resp_data.user.token;
-    let user_data = json!({
-        "id": resp_data.user.id,
-        "email": resp_data.user.email
-    });
-    (user_data, token)
+
+    if is_active {
+        let user = open_taffeta_lib::models::User {
+            id: resp_data.user.id,
+            password: user_data.get("password").unwrap().to_string(),
+            email: resp_data.user.email.clone(),
+            active: true
+        };
+        open_taffeta_lib::db::update_user(&conn, user);
+    }
+
+    // query that user
+    let q = format!("/users/{}", resp_data.user.id);
+    let mut response = client
+        .get(api_base_uri.join(&q).unwrap())
+        .header(AUTHORIZATION, HeaderValue::from_str(token.as_str()).unwrap())
+        .send()
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let resp_data : ResponseUserDetail = response.json().expect("Error opening user detail response");
+
+    (resp_data, user_data.get("password").unwrap().to_string(), token)
 }

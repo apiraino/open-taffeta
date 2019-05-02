@@ -12,7 +12,7 @@ use open_taffeta_lib::schema::users::dsl::*;
 use open_taffeta_lib::schema::doors::dsl::*;
 
 pub struct DbState {
-    conn: SqliteConnection,
+    pub conn: SqliteConnection,
 }
 
 impl DbState {
