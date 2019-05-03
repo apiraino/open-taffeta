@@ -6,6 +6,7 @@
 
 use serde_derive::{Serialize, Deserialize};
 use crate::schema::users;
+use crate::schema::userauth;
 use crate::auth::Auth;
 
 #[derive(Queryable, Clone, Serialize, Deserialize, Debug, Default, Insertable, AsChangeset, Identifiable, PartialEq)]
@@ -17,13 +18,27 @@ pub struct User {
     pub active: bool
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Queryable, Serialize, Deserialize, Debug, Insertable)]
+#[table_name = "userauth"]
 pub struct UserAuth {
     pub id: i32,
-    pub email: String,
+    pub user_id: i32,
     pub token: String,
-    // TODO: rename this field to "is_active" ffs
-    pub active: bool,
+}
+
+#[derive(Queryable, Serialize, Deserialize, Debug, Insertable)]
+#[table_name = "userauth"]
+pub struct UserAuthInsert {
+    pub user_id: i32,
+    pub token: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct UserAuthFull {
+    pub user_id: i32,
+    pub token: String,
+    pub email: String,
+    pub is_active: bool
 }
 
 #[derive(Queryable, Serialize, Deserialize, Debug, Default)]
@@ -39,20 +54,16 @@ pub struct Door {
 impl User {
 
     // generate tokens for signup + logins
-    pub fn to_user_auth(&self) -> UserAuth {
-        let auth = Auth::new(
-            self.id,
-            self.email.clone()
-        );
-        let token = auth.generate_token();
-        eprintln!("DBG: generated token: {}", token);
-        auth.save_auth_token(&token);
+    pub fn to_user_auth(&self) -> UserAuthFull {
+        let auth = Auth::new(self.id);
+        let token = auth.generate_token(&self.email);
+        eprintln!("DBG (models) generated token: {}", token);
 
-        UserAuth {
-            id: self.id,
+        UserAuthFull {
+            user_id: self.id,
             email: self.email.clone(),
             token: token,
-            active: self.active
+            is_active: self.active
         }
     }
 }

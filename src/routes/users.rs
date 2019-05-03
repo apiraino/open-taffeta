@@ -15,7 +15,7 @@ use rocket_contrib::json::{Json, JsonValue};
 use validator::{Validate, ValidationError};
 use validator_derive::Validate;
 use serde_derive::{Serialize, Deserialize};
-use crate::auth::Auth;
+use crate::auth::{Auth, self as auth};
 use crate::crypto;
 
 #[derive(Serialize, Deserialize, Validate, Debug, Insertable)]
@@ -118,6 +118,7 @@ pub fn login_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIRespon
 
 #[post("/signup", data = "<user_data>", format = "application/json")]
 pub fn signup_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIResponse {
+    eprintln!("DBG: (endpoint) signup_user {}", user_data.email);
     let mut new_user = UserLoginSignup {
         password: user_data.password.clone(),
         email: user_data.email.clone()
@@ -158,15 +159,17 @@ pub fn signup_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIRespo
                 });
                 bad_request().data(resp_data)
             }
-        }
+        },
         Ok(_) => {
             let user: User = users
                 .filter(email.eq(&new_user.email))
                 .first(&*conn)
                 .unwrap_or_else(|_| panic!("error getting user with email={}", new_user.email));
-
             let user_auth = user.to_user_auth();
-            let resp_data = json!({ "user": user_auth });
+            auth::save_auth_token(conn, user.id, &user_auth.token);
+            let resp_data = json!({
+                "user": user_auth
+            });
             created().data(resp_data)
         }
     }

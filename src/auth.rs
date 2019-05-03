@@ -1,8 +1,10 @@
 // Verbatim copy from:
 // https://github.com/TatriX/realworld-rust-rocket/blob/master/src/main.rs
-use rocket::Outcome;
+use rocket::{Outcome, State};
 use rocket::request::{self, FromRequest, Request};
 use rocket::http::Status;
+use diesel::prelude::*;
+use diesel::result::DatabaseErrorKind;
 
 extern crate crypto_hash;
 use crypto_hash::{Algorithm, hex_digest};
@@ -10,6 +12,7 @@ use crypto_hash::{Algorithm, hex_digest};
 // Need serde directly, rocket_contrib export is still WIP
 use serde_derive::{Serialize, Deserialize};
 use crate::config;
+use crate::db::{Conn, SqlitePool};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Auth {
@@ -17,7 +20,6 @@ pub struct Auth {
     pub exp: i64,
     /// user id
     pub id: i32,
-    pub email: String,
     pub client_id: String
 }
 
@@ -25,33 +27,25 @@ pub type Token = String;
 
 impl Auth {
 
-    pub fn new(id: i32, email: String) -> Auth {
+    pub fn new(id: i32) -> Auth {
         Auth {
             // TODO: return a DateTime
             exp: config::TOKEN_LIFETIME, // get_token_duration!(),
             id: id,
-            email: email,
             client_id: "client-type-web".to_string()
         }
     }
 
-    pub fn generate_token(&self) -> String {
+    pub fn generate_token(&self, user_email: &str) -> String {
         let rndstr = config::generate_password();
         let value = format!("{}{}{}{}{}",
-                            // TODO: return a DateTime
-                            config::TOKEN_LIFETIME, // get_token_duration!(),
+                            self.exp,
                             self.id,
-                            self.email.to_string(),
+                            user_email,
                             rndstr,
                             config::get_secret(),
         );
         hex_digest(Algorithm::SHA1, &value.into_bytes())
-    }
-
-    pub fn save_auth_token(&self, token: &String) {
-        eprintln!("DBG: saving token: {}", token);
-        // TODO: save token
-        // TODO: rotate tokens
     }
 }
 
@@ -64,43 +58,78 @@ impl<'a, 'r> FromRequest<'a, 'r> for Auth {
     type Error = ApiKeyError;
 
     fn from_request(request: &'a Request<'r>) -> request::Outcome<Auth, Self::Error> {
-        if let Some(auth) = extract_auth_from_request(request) {
-            Outcome::Success(auth)
-        } else {
-            Outcome::Failure((Status::Unauthorized, ApiKeyError::Missing))
+
+        let pool = request.guard::<State<SqlitePool>>().expect("FIXME: could not unwrap State");
+        match pool.get() {
+            Ok(conn) => {
+                if let Some(auth) = extract_auth_from_request(request, Conn(conn)) {
+                    Outcome::Success(auth)
+                } else {
+                    Outcome::Failure((Status::Unauthorized, ApiKeyError::Missing))
+                }
+
+            }
+            Err(_) => {
+                eprintln!("Cannot get Db socket conn from pool");
+                Outcome::Failure((Status::Unauthorized, ApiKeyError::Missing))
+            },
         }
     }
 }
 
-fn extract_auth_from_request(request: &Request) -> Option<Auth> {
-    let header = request.headers().get("authorization").next();
+fn extract_auth_from_request(request: &Request, conn: Conn) -> Option<Auth> {
+    use crate::models::UserAuth;
+    use crate::schema::userauth::dsl::*;
 
-    if let Some(token) = header {
-        // TODO: query DB for token
-        // then figure out which user is this
+    let header = request.headers().get("authorization").next();
+    if let Some(rcvd_token) = header {
+        eprintln!("DBG (auth::extract_auth_from_request) got token: {}", rcvd_token);
+
+        let user_auth : UserAuth = userauth
+            .filter(token.eq(rcvd_token))
+            .get_result(&*conn)
+            .expect(&format!("get user auth failed for token {}", rcvd_token));
+
         let a = Auth {
-            id: 123,
-            email: "email@dot.com".to_string(),
+            id: user_auth.user_id,
             exp: config::TOKEN_LIFETIME,
             client_id: "client-type-web".to_string()
         };
-        eprintln!("DBG: got token: {}", token);
-        eprintln!("DBG: user retrieved: {}", a.email);
+
+        eprintln!("DBG (auth::extract_auth_from_request) user retrieved: {}", a.id);
         return Some(a);
     }
     None
+}
 
-    // if let Some(token) = header {
-    //     match jwt::decode::<Auth>(
-    //         &token.to_string(),
-    //         config::get_secret().as_ref(),
-    //         &jwt::Validation::new(Algorithm::HS512),
-    //     ) {
-    //         Err(err) => {
-    //             println!("Auth decode error: {:?}", err);
-    //         }
-    //         Ok(c) => return Some(c.claims),
-    //     };
-    // }
-    // None
+pub fn save_auth_token(conn: Conn, fld_user_id: i32, fld_token: &String) {
+    use crate::models::UserAuthInsert;
+    use crate::schema::userauth::dsl::*;
+
+    // eprintln!("DBG (auth::save_token) self is: {}", self.);
+    eprintln!("DBG (auth::save_token) saving token: {}", fld_token);
+    // TODO: rotate tokens
+
+    let user_auth = UserAuthInsert {
+        user_id: fld_user_id,
+        token: fld_token.to_string()
+    };
+
+    // TODO: bubble up an exception
+    match diesel::insert_into(userauth).values(&user_auth).execute(&*conn) {
+        Err(err) => {
+            if let diesel::result::Error::DatabaseError(
+                DatabaseErrorKind::UniqueViolation,
+                _,
+            ) = err
+            {
+                eprintln!("auth:save_auth_token Error saving token (Uniqueviolation)");
+            } else {
+                eprintln!("auth:save_auth_token Error saving token (other error...)");
+            }
+        },
+        Ok(_) => {
+            eprintln!("auth:save_auth_token: Token saved successfully");
+        }
+    };
 }

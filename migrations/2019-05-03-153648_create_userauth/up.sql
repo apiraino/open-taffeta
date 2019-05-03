@@ -1,0 +1,5 @@
+CREATE TABLE userauth (
+       id INTEGER PRIMARY KEY NOT NULL,
+       user_id INTEGER NOT NULL,
+       token VARCHAR NOT NULL UNIQUE
+);

@@ -10,6 +10,14 @@ table! {
 }
 
 table! {
+    userauth (id) {
+        id -> Integer,
+        user_id -> Integer,
+        token -> Text,
+    }
+}
+
+table! {
     users (id) {
         id -> Integer,
         password -> Text,
@@ -20,5 +28,6 @@ table! {
 
 allow_tables_to_appear_in_same_query!(
     doors,
+    userauth,
     users,
 );

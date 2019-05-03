@@ -1,5 +1,5 @@
 use serde_derive::{Deserialize, Serialize};
-use crate::models::UserAuth;
+use crate::models::UserAuthFull;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct UserBaseResponse {
@@ -9,8 +9,15 @@ pub struct UserBaseResponse {
 }
 
 #[derive(Deserialize, Debug)]
+pub struct UserAuthResponse {
+    user_id: i32,
+    email: String,
+    token: String
+}
+
+#[derive(Deserialize, Debug)]
 pub struct ResponseLoginSignup {
-    pub user: UserAuth
+    pub user: UserAuthFull
 }
 
 #[derive(Deserialize, Debug)]
