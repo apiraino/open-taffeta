@@ -45,7 +45,7 @@ pub fn signup_user(conn: &SqliteConnection, email: &str, is_active: bool) -> (Re
 
     if is_active {
         let user = open_taffeta_lib::models::User {
-            id: resp_data.user.id,
+            id: resp_data.user.user_id,
             password: user_data.get("password").unwrap().to_string(),
             email: resp_data.user.email.clone(),
             active: true
@@ -54,7 +54,7 @@ pub fn signup_user(conn: &SqliteConnection, email: &str, is_active: bool) -> (Re
     }
 
     // query that user
-    let q = format!("/users/{}", resp_data.user.id);
+    let q = format!("/users/{}", resp_data.user.user_id);
     let mut response = client
         .get(api_base_uri.join(&q).unwrap())
         .header(AUTHORIZATION, HeaderValue::from_str(token.as_str()).unwrap())

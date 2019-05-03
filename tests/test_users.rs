@@ -37,10 +37,10 @@ fn test_user_signup() {
         .unwrap();
     assert_eq!(response.status(), StatusCode::CREATED);
     let resp_data: ResponseLoginSignup = response.json().expect("Error unwrapping signup response");
-    let user_id = resp_data.user.id;
+    let user_id = resp_data.user.user_id;
     let token = resp_data.user.token;
-    assert_eq!(resp_data.user.id, user_id);
-    assert_eq!(resp_data.user.active, false);
+    assert_eq!(resp_data.user.user_id, user_id);
+    assert_eq!(resp_data.user.is_active, false);
 
     // check for 1 users
     let mut response = client
@@ -191,8 +191,8 @@ fn test_user_login() {
         .expect("Login failed");
     assert_eq!(response.status(), StatusCode::OK);
     let resp_data: ResponseLoginSignup = response.json().unwrap();
-    assert_eq!(resp_data.user.id, user_id);
-    assert_eq!(resp_data.user.active, true);
+    assert_eq!(resp_data.user.user_id, user_id);
+    assert_eq!(resp_data.user.is_active, true);
 }
 
 #[test]
@@ -217,7 +217,7 @@ fn test_user_login_generate_auth_token() {
         .expect("Login failed");
     assert_eq!(response.status(), StatusCode::OK);
     let resp_data: ResponseLoginSignup = response.json().unwrap();
-    assert_eq!(resp_data.user.id, user_id);
+    assert_eq!(resp_data.user.user_id, user_id);
     assert_ne!(resp_data.user.token, token);
 }
 
