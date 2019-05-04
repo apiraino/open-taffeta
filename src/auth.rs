@@ -91,7 +91,6 @@ fn extract_auth_from_request(request: &Request, conn: Conn) -> Option<Auth> {
 
     let header = request.headers().get("authorization").next();
     if let Some(rcvd_token) = header {
-        eprintln!("DBG (auth::extract_auth_from_request) got token: {}", rcvd_token);
 
         let user_auth : AuthQ = userauth
             .filter(token.eq(rcvd_token))
@@ -99,8 +98,6 @@ fn extract_auth_from_request(request: &Request, conn: Conn) -> Option<Auth> {
             .expect(&format!("get user auth failed for token {}", rcvd_token));
 
         // TODO: check against != 1 records returned
-
-        eprintln!("DBG (auth::extract_auth_from_request) user retrieved: {}", user_auth.user_id);
 
         let user_auth_q : Auth = Auth {
             exp: user_auth.exp,
@@ -115,10 +112,7 @@ fn extract_auth_from_request(request: &Request, conn: Conn) -> Option<Auth> {
 
 pub fn save_auth_token(conn: Conn, auth: &Auth) {
     use crate::schema::userauth::dsl::*;
-
-    eprintln!("DBG (auth::save_token) saving token: {}", auth.token);
     // TODO: rotate tokens
-
     // TODO: bubble up an exception
     match diesel::insert_into(userauth).values(auth).execute(&*conn) {
         Err(err) => {

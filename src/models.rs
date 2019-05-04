@@ -30,8 +30,6 @@ pub struct Door {
 impl User {
     // generate tokens for signup + logins
     pub fn to_user_auth(&self) -> Auth {
-        let auth = Auth::new(self.id, &self.email);
-        eprintln!("DBG (models) generated token: {}", auth.token );
-        auth
+        Auth::new(self.id, &self.email)
     }
 }
