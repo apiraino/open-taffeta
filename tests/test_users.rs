@@ -23,7 +23,9 @@ fn test_db() {
 
 #[test]
 fn test_user_signup() {
-    DbState::new();
+    let state = DbState::new();
+    state.clean_tables();
+    state.assert_empty_users();
     let api_base_uri = common::api_base_url();
     let user_data = json!({
         "password": "1234567",
@@ -58,7 +60,6 @@ fn test_user_signup() {
 fn test_user_signup_and_activate() {
     let state = DbState::new();
     state.clean_tables();
-    // check for 0 users
     state.assert_empty_users();
     // signup a user
     let (resp_data, _, _) = common::signup_user(&state.conn, "josh@domain.com", false);
@@ -235,7 +236,25 @@ fn test_user_login_rotate_auth_token() {
 
 #[test]
 fn test_user_login_expire_auth_token() {
-    assert!(true, "TODO");
+    let state = DbState::new();
+    let (user, _) = state.create_user("user@domain.com", false);
+    let client = Client::new();
+
+    // create a bunch of tokens
+    let expiry_date_far = chrono::NaiveDateTime::parse_from_str("2015-09-05 23:56:04", "%Y-%m-%d %H:%M:%S").unwrap();
+    let expiry_date_close = chrono::NaiveDateTime::from_timestamp(
+        (chrono::Utc::now() + chrono::Duration::hours(1))
+            .timestamp(), 0);
+    let expiry_date_just_expired = chrono::NaiveDateTime::from_timestamp(
+        (chrono::Utc::now() + chrono::Duration::hours(1) - chrono::Duration::seconds(1) )
+            .timestamp(), 0);
+
+    let auth = state.create_auth(&user, expiry_date_far).unwrap();
+    common::get_user_detail(&client, user.id, auth.token, StatusCode::UNAUTHORIZED);
+    let auth = state.create_auth(&user, expiry_date_close).unwrap();
+    common::get_user_detail(&client, user.id, auth.token, StatusCode::OK);
+    let auth = state.create_auth(&user, expiry_date_just_expired).unwrap();
+    common::get_user_detail(&client, user.id, auth.token, StatusCode::UNAUTHORIZED);
 }
 
 #[test]

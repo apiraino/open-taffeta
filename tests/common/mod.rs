@@ -67,3 +67,18 @@ pub fn signup_user(conn: &SqliteConnection, email: &str, is_active: bool) -> (Re
 
     (resp_data, user_data.get("password").unwrap().to_string(), token)
 }
+
+pub fn get_user_detail(client: &Client, user_id: i32, auth_token: String, expected_status_code: StatusCode) -> Option<ResponseUserDetail> {
+    let api_base_uri = api_base_url();
+    let mut response = client
+        .get(api_base_uri.join(&format!("/users/{}", user_id)).unwrap())
+        .header(AUTHORIZATION, HeaderValue::from_str(auth_token.as_str()).unwrap())
+        .send()
+        .unwrap();
+    assert_eq!(response.status(), expected_status_code);
+    if response.status() == StatusCode::OK {
+        let r : ResponseUserDetail = response.json().expect("Error opening user detail response");
+        Some(r);
+    }
+    None
+}

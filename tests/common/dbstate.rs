@@ -8,8 +8,12 @@ use crate::common::dbstate::diesel::prelude::*;
 use std::env;
 
 use open_taffeta_lib::models::User;
+use open_taffeta_lib::db::Conn;
+use open_taffeta_lib::auth::Auth;
+use open_taffeta_lib::auth::{self as auth};
 use open_taffeta_lib::schema::users::dsl::*;
 use open_taffeta_lib::schema::doors::dsl::*;
+use open_taffeta_lib::schema::userauth::dsl::*;
 
 pub struct DbState {
     pub conn: SqliteConnection,
@@ -50,6 +54,16 @@ impl DbState {
         (user, test_password)
     }
 
+    pub fn create_auth(&self, user: &User, expiry_date: chrono::NaiveDateTime) -> Option<Auth> {
+        let mut auth = Auth::new(user.id, &user.email);
+        auth.exp = expiry_date;
+        if let Ok(_) = diesel::insert_into(userauth).values(&auth).execute(&self.conn) {
+            Some(auth)
+        } else {
+            None
+        }
+    }
+
     pub fn assert_empty_users(&self) {
         assert_eq!(0, users.count().execute(&self.conn).unwrap());
     }
@@ -64,6 +78,8 @@ impl DbState {
             .expect("Cannot delete users");
         diesel::delete(doors).execute(&self.conn)
             .expect("Cannot delete doors");
+        diesel::delete(userauth).execute(&self.conn)
+            .expect("Cannot delete userauth");
     }
 }
 

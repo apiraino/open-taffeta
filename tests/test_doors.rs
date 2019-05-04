@@ -20,7 +20,7 @@ use open_taffeta_lib::serializers::doors::{ResponseDoorCreated};
 // https://bitbucket.org/dorianpula/rookeries/src/master/tests/test_site_management.rs
 
 #[test]
-fn test_bad_auth() {
+fn test_door_bad_auth() {
     DbState::new();
     let api_base_uri = common::api_base_url();
     let client = Client::new();
@@ -40,7 +40,7 @@ fn test_bad_auth() {
 }
 
 #[test]
-fn test_create() {
+fn test_door_create() {
     let state = DbState::new();
     let api_base_uri = common::api_base_url();
     let (_, _, token) = common::signup_user(&state.conn, "josh@domain.com", true);
@@ -73,7 +73,7 @@ fn test_create() {
 }
 
 #[test]
-fn test_delete() {
+fn test_door_delete() {
     let state = DbState::new();
     let api_base_uri = common::api_base_url();
     let (_, _, token) = common::signup_user(&state.conn, "josh@domain.com", true);
@@ -108,7 +108,7 @@ fn test_delete() {
 
 // only available for local testing
 // #[test]
-fn test_buzz() {
+fn test_door_buzz() {
     let state = DbState::new();
     let api_base_uri = common::api_base_url();
     let (_, _, token) = common::signup_user(&state.conn, "josh@domain.com", true);
