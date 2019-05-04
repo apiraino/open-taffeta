@@ -1,5 +1,3 @@
-// Verbatim copy from:
-// https://github.com/TatriX/realworld-rust-rocket/blob/master/src/main.rs
 use rocket::{Outcome, State};
 use rocket::request::{self, FromRequest, Request};
 use rocket::http::Status;

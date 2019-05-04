@@ -59,3 +59,5 @@ pub fn update_user(conn: &SqliteConnection, user: User) {
         eprintln!("Error in record update: {:?}", res);
     }
 }
+
+// TODO: centralize in this module all queries

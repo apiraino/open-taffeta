@@ -121,7 +121,6 @@ pub fn login_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIRespon
 
 #[post("/signup", data = "<user_data>", format = "application/json")]
 pub fn signup_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIResponse {
-    eprintln!("DBG: (endpoint) signup_user {}", user_data.email);
     let mut new_user = UserLoginSignup {
         password: user_data.password.clone(),
         email: user_data.email.clone()

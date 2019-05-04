@@ -13,6 +13,8 @@ table! {
     userauth (id) {
         id -> Integer,
         user_id -> Integer,
+        exp -> Timestamp,
+        client_id -> Text,
         token -> Text,
     }
 }
@@ -22,7 +24,7 @@ table! {
         id -> Integer,
         password -> Text,
         email -> Text,
-        active -> Bool,
+        is_active -> Bool,
     }
 }
 
