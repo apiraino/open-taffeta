@@ -11,40 +11,51 @@ use crypto_hash::{Algorithm, hex_digest};
 use serde_derive::{Serialize, Deserialize};
 use crate::config;
 use crate::db::{Conn, SqlitePool};
+use crate::schema::userauth;
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Queryable, Insertable, Debug, Deserialize, Serialize)]
+#[table_name = "userauth"]
 pub struct Auth {
-    /// timestamp
-    pub exp: i64,
-    /// user id
+    // TODO: Sqlite::DateTime in Diesel does not support tz (?)
+    // pub exp: chrono::DateTime<chrono::offset::Utc>,
+    pub user_id: i32,
+    pub exp: chrono::NaiveDateTime,
+    pub client_id: String,
+    pub token: String
+}
+
+#[derive(Queryable)]
+pub struct AuthQ {
     pub id: i32,
-    pub client_id: String
+    pub user_id: i32,
+    pub exp: chrono::NaiveDateTime,
+    pub client_id: String,
+    pub token: String
 }
 
 pub type Token = String;
 
 impl Auth {
 
-    pub fn new(id: i32) -> Auth {
-        Auth {
-            // TODO: return a DateTime
-            exp: config::TOKEN_LIFETIME, // get_token_duration!(),
-            id: id,
-            client_id: "client-type-web".to_string()
-        }
-    }
-
-    pub fn generate_token(&self, user_email: &str) -> String {
+    pub fn new(user_id: i32, user_email: &str) -> Auth {
+        let exp = get_token_duration!();
         let rndstr = config::generate_password();
         let value = format!("{}{}{}{}{}",
-                            self.exp,
-                            self.id,
+                            exp,
+                            user_id,
                             user_email,
                             rndstr,
                             config::get_secret(),
         );
-        hex_digest(Algorithm::SHA1, &value.into_bytes())
+        let token = hex_digest(Algorithm::SHA1, &value.into_bytes());
+        Auth {
+            exp: exp,
+            user_id: user_id,
+            client_id: "client-type-web".to_string(),
+            token: token
+        }
     }
+
 }
 
 #[derive(Debug)]
@@ -76,45 +87,40 @@ impl<'a, 'r> FromRequest<'a, 'r> for Auth {
 }
 
 fn extract_auth_from_request(request: &Request, conn: Conn) -> Option<Auth> {
-    use crate::models::UserAuth;
     use crate::schema::userauth::dsl::*;
 
     let header = request.headers().get("authorization").next();
     if let Some(rcvd_token) = header {
         eprintln!("DBG (auth::extract_auth_from_request) got token: {}", rcvd_token);
 
-        let user_auth : UserAuth = userauth
+        let user_auth : AuthQ = userauth
             .filter(token.eq(rcvd_token))
             .get_result(&*conn)
             .expect(&format!("get user auth failed for token {}", rcvd_token));
 
-        let a = Auth {
-            id: user_auth.user_id,
-            exp: config::TOKEN_LIFETIME,
-            client_id: "client-type-web".to_string()
-        };
+        // TODO: check against != 1 records returned
 
-        eprintln!("DBG (auth::extract_auth_from_request) user retrieved: {}", a.id);
-        return Some(a);
+        eprintln!("DBG (auth::extract_auth_from_request) user retrieved: {}", user_auth.user_id);
+
+        let user_auth_q : Auth = Auth {
+            exp: user_auth.exp,
+            user_id: user_auth.user_id,
+            client_id: user_auth.client_id,
+            token: user_auth.token
+        };
+        return Some(user_auth_q);
     }
     None
 }
 
-pub fn save_auth_token(conn: Conn, fld_user_id: i32, fld_token: &String) {
-    use crate::models::UserAuthInsert;
+pub fn save_auth_token(conn: Conn, auth: &Auth) {
     use crate::schema::userauth::dsl::*;
 
-    // eprintln!("DBG (auth::save_token) self is: {}", self.);
-    eprintln!("DBG (auth::save_token) saving token: {}", fld_token);
+    eprintln!("DBG (auth::save_token) saving token: {}", auth.token);
     // TODO: rotate tokens
 
-    let user_auth = UserAuthInsert {
-        user_id: fld_user_id,
-        token: fld_token.to_string()
-    };
-
     // TODO: bubble up an exception
-    match diesel::insert_into(userauth).values(&user_auth).execute(&*conn) {
+    match diesel::insert_into(userauth).values(auth).execute(&*conn) {
         Err(err) => {
             if let diesel::result::Error::DatabaseError(
                 DatabaseErrorKind::UniqueViolation,

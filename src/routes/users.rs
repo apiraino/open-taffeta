@@ -68,21 +68,28 @@ pub fn get_users(conn: db::Conn, _auth: Auth, active: Option<bool>) -> JsonValue
 
 #[get("/users/<user_id>", format = "application/json")]
 pub fn get_user(conn: db::Conn, _auth: Auth, user_id: i32) -> APIResponse {
-    let user : Result<User, diesel::result::Error> = users
-        // .filter(active.eq(true))
+    let user_result : Result<User, diesel::result::Error> = users
+        // .filter(is_active.eq(true))
         .filter(id.eq(user_id))
         .get_result(&*conn);
 
-    match user {
+    match user_result {
         Err(diesel::NotFound) => {
             let resp_data = json!({
                 "status": "error",
-                "detail": format!("error retrieving active user id = {}", user_id)
+                "detail": format!("error retrieving active user id {}", user_id)
             });
             bad_request().data(resp_data)
         },
-        _ =>  {
-            ok().data(json!({ "user": user.expect("Unmanaged error while unwrapping user entity") }))
+        Err(err) => {
+            let resp_data = json!({
+                "status": "error",
+                "detail": format!("error executing query: {}", err)
+            });
+            bad_request().data(resp_data)
+        }
+        Ok(user) =>  {
+            ok().data(json!({ "user": user }))
         }
     }
 }
@@ -134,7 +141,7 @@ pub fn signup_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIRespo
             "status":"error",
             "detail": err_msg
         });
-        bad_request().data(resp_data);
+        return bad_request().data(resp_data);
     }
     new_user.password = crypto::hash_password(new_user.password);
 
@@ -145,32 +152,31 @@ pub fn signup_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIRespo
                 _,
             ) = err
             {
-                let err_msg = format!("DB error - record already exists: {:?}", err);
-                println!("{:?}", err_msg);
                 let resp_data = json!({
                     "status":"error",
-                    "detail": err_msg
+                    "detail": format!("DB error - record already exists: {:?}", err)
                 });
                 bad_request().data(resp_data)
             } else {
-                let err_msg = format!("DB error: {:?}", err);
-                println!("{:?}", err_msg);
                 let resp_data = json!({
                     "status":"error",
-                    "detail": err_msg
+                    "detail": format!("DB error: {:?}", err)
                 });
                 bad_request().data(resp_data)
             }
         },
         Ok(_) => {
+            // TODO: select all of them, then count record
+            // TODO: remove the panic -_-
             let user: User = users
                 .filter(email.eq(&new_user.email))
                 .first(&*conn)
-                .unwrap_or_else(|_| panic!("error getting user with email={}", new_user.email));
+                .unwrap_or_else(|_| panic!("error getting user with email {}", new_user.email));
             let user_auth = user.to_user_auth();
-            auth::save_auth_token(conn, user.id, &user_auth.token);
+            auth::save_auth_token(conn, &user_auth);
             let resp_data = json!({
-                "user": user_auth
+                "auth": user_auth,
+                "is_active": user.is_active
             });
             created().data(resp_data)
         }
