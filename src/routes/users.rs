@@ -48,12 +48,12 @@ pub fn validate_pwd_strength(pwd: &str) -> Result<(), ValidationError> {
     Ok(())
 }
 
-#[get("/users?<is_active>", format = "application/json")]
-pub fn get_users(conn: db::Conn, _auth: Auth, is_active: Option<bool>) -> JsonValue {
-    let users_rs : Vec<User> = match is_active {
+#[get("/users?<active>", format = "application/json")]
+pub fn get_users(conn: db::Conn, _auth: Auth, active: Option<bool>) -> JsonValue {
+    let users_rs : Vec<User> = match active {
         Some(_) => {
             users
-                .filter(active.eq(is_active.unwrap_or_else(|| false)))
+                .filter(is_active.eq(active.unwrap_or_else(|| false)))
                 .load(&*conn)
                 .expect("error retrieving users")
         },
@@ -96,14 +96,17 @@ pub fn login_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIRespon
 
     let err_msg = format!("error retrieving active user with email={}", logmein.email);
     let user: Vec<User> = users
-        .filter(active.eq(true))
+        .filter(is_active.eq(true))
         .filter(email.eq(logmein.email.clone()))
         .load(&*conn)
         .expect(&err_msg);
 
     match user.len() {
         1 => {
-            ok().data(json!({ "user": user[0].to_user_auth() }))
+            ok().data(json!({
+                "auth": user[0].to_user_auth(),
+                "is_active": user[0].is_active
+            }))
         },
         _ => {
             let resp_data = json!({
