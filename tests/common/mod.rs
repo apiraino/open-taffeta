@@ -30,8 +30,9 @@ pub fn api_base_url() -> Url {
 pub fn signup_user(conn: &SqliteConnection, email: &str, is_active: bool) -> (ResponseUserDetail, String, String) {
     let client = Client::new();
     let api_base_uri = api_base_url();
+    let password = open_taffeta_lib::config::generate_password();
     let user_data = json!({
-        "password": open_taffeta_lib::config::generate_password(),
+        "password": password,
         "email": email
     });
     let mut response = client
@@ -41,20 +42,21 @@ pub fn signup_user(conn: &SqliteConnection, email: &str, is_active: bool) -> (Re
         .unwrap();
     assert_eq!(response.status(), StatusCode::CREATED);
     let resp_data : ResponseLoginSignup = response.json().expect("Error opening signup response");
-    let token = resp_data.user.token;
+    let token = resp_data.auth.token;
 
+    // also activate the user
     if is_active {
         let user = open_taffeta_lib::models::User {
-            id: resp_data.user.user_id,
-            password: user_data.get("password").unwrap().to_string(),
-            email: resp_data.user.email.clone(),
-            active: true
+            id: resp_data.auth.user_id,
+            password: password,
+            email: email.to_string(),
+            is_active: true
         };
         open_taffeta_lib::db::update_user(&conn, user);
     }
 
-    // query that user
-    let q = format!("/users/{}", resp_data.user.user_id);
+    // get back that user (Sqlite has no RETURNING support)
+    let q = format!("/users/{}", resp_data.auth.user_id);
     let mut response = client
         .get(api_base_uri.join(&q).unwrap())
         .header(AUTHORIZATION, HeaderValue::from_str(token.as_str()).unwrap())

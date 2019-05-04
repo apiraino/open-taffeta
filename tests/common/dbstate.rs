@@ -25,7 +25,7 @@ impl DbState {
     }
 
     // warning: "email" param colliding with fields in "open_taffeta_lib::schema::users::*" (duh)
-    pub fn create_user(&self, email_fld: &str, is_active: bool) -> (User, String) {
+    pub fn create_user(&self, email_fld: &str, active: bool) -> (User, String) {
         let mut test_user = User::default();
         test_user.email = String::from(email_fld);
         let test_password = open_taffeta_lib::config::generate_password();
@@ -35,7 +35,7 @@ impl DbState {
             .values((
                 password.eq(&test_user.password),
                 email.eq(&test_user.email),
-                active.eq(is_active)
+                is_active.eq(active)
             )).execute(&self.conn)
             .expect("Test user could not be created.");
 

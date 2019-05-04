@@ -37,12 +37,12 @@ fn test_user_signup() {
         .unwrap();
     assert_eq!(response.status(), StatusCode::CREATED);
     let resp_data: ResponseLoginSignup = response.json().expect("Error unwrapping signup response");
-    let user_id = resp_data.user.user_id;
-    let token = resp_data.user.token;
-    assert_eq!(resp_data.user.user_id, user_id);
-    assert_eq!(resp_data.user.is_active, false);
+    let user_id = resp_data.auth.user_id;
+    let token = resp_data.auth.token;
+    assert_eq!(resp_data.auth.user_id, user_id);
+    assert_eq!(resp_data.is_active, false);
 
-    // check for 1 users
+    // should count 1 user
     let mut response = client
         .get(api_base_uri.join("/users").unwrap())
         .header(AUTHORIZATION, HeaderValue::from_str(token.as_str()).unwrap())
@@ -63,11 +63,11 @@ fn test_user_signup_and_activate() {
     // signup a user
     let (resp_data, _, _) = common::signup_user(&state.conn, "josh@domain.com", false);
     assert_eq!(resp_data.user.email, "josh@domain.com");
-    assert_eq!(resp_data.user.active, false);
+    assert_eq!(resp_data.user.is_active, false);
 
     let (resp_data, _, _) = common::signup_user(&state.conn, "josh1@domain.com", true);
     assert_eq!(resp_data.user.email, "josh1@domain.com");
-    assert_eq!(resp_data.user.active, true);
+    assert_eq!(resp_data.user.is_active, true);
 }
 
 #[test]
@@ -79,11 +79,11 @@ fn test_user_already_signed_up() {
     // signup a user
     let (resp_data, _, _) = common::signup_user(&state.conn, "josh@domain.com", false);
     assert_eq!(resp_data.user.email, "josh@domain.com");
-    assert_eq!(resp_data.user.active, false);
+    assert_eq!(resp_data.user.is_active, false);
 
     let (resp_data, _, _) = common::signup_user(&state.conn, "josh1@domain.com", true);
     assert_eq!(resp_data.user.email, "josh1@domain.com");
-    assert_eq!(resp_data.user.active, true);
+    assert_eq!(resp_data.user.is_active, true);
 
     // repeat same payload, expect a 400
     let api_base_uri = common::api_base_url();
@@ -131,13 +131,19 @@ fn test_user_detail_not_allowed() {
 }
 
 #[test]
-fn test_user_detail_admin_not_allowed() {
-    assert!(true, "TODO: admin is allowed to access any user details");
+fn test_user_no_allowed_to_admin_interface() {
+    // hint: use Rocket route ordering
+    assert!(true, "TODO: user is not allowed to any admin interface (such as /users)");
 }
 
 #[test]
-fn test_admin_allowed() {
+fn test_admin_update_allowed() {
     assert!(true, "TODO: admin is allowed to update any user");
+}
+
+#[test]
+fn test_admin_list_allowed() {
+    assert!(true, "TODO: admin is allowed to list users");
 }
 
 #[test]
@@ -161,13 +167,14 @@ fn test_user_list() {
 
     // query only active users
     let mut response = client
-        .get(api_base_uri.join("/users?is_active=true").unwrap())
+        .get(api_base_uri.join("/users?active=true").unwrap())
         .header(AUTHORIZATION, HeaderValue::from_str(token.as_str()).unwrap())
         .send()
         .unwrap();
     assert_eq!(response.status(), StatusCode::OK);
     let resp_data: ResponseListUser = response.json().unwrap();
     assert_eq!(resp_data.users.len(), 1);
+    assert_eq!(resp_data.users[0].email, "josh@domain.com");
 }
 
 #[test]
@@ -191,8 +198,8 @@ fn test_user_login() {
         .expect("Login failed");
     assert_eq!(response.status(), StatusCode::OK);
     let resp_data: ResponseLoginSignup = response.json().unwrap();
-    assert_eq!(resp_data.user.user_id, user_id);
-    assert_eq!(resp_data.user.is_active, true);
+    assert_eq!(resp_data.auth.user_id, user_id);
+    assert_eq!(resp_data.is_active, true);
 }
 
 #[test]
@@ -216,12 +223,22 @@ fn test_user_login_generate_auth_token() {
         .send()
         .expect("Login failed");
     assert_eq!(response.status(), StatusCode::OK);
-    let resp_data: ResponseLoginSignup = response.json().unwrap();
-    assert_eq!(resp_data.user.user_id, user_id);
-    assert_ne!(resp_data.user.token, token);
+    let resp_data: ResponseLoginSignup = response.json().expect("Failed to unwrap the login response");
+    assert_eq!(resp_data.auth.user_id, user_id);
+    assert_ne!(resp_data.auth.token, token);
 }
 
 #[test]
 fn test_user_login_rotate_auth_token() {
     assert!(true, "TODO: login 5 times, check token rotation");
+}
+
+#[test]
+fn test_user_login_expire_auth_token() {
+    assert!(true, "TODO");
+}
+
+#[test]
+fn test_user_login_renew_auth_token() {
+    assert!(true, "TODO");
 }
