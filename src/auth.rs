@@ -17,9 +17,9 @@ use crate::schema::userauth;
 #[table_name = "userauth"]
 pub struct Auth {
     // TODO: Sqlite::DateTime in Diesel does not support tz (?)
-    // pub exp: chrono::DateTime<chrono::offset::Utc>,
     pub user_id: i32,
     pub exp: chrono::NaiveDateTime,
+    // pub exp: chrono::DateTime<chrono::offset::Utc>,
     pub client_id: String,
     pub token: String
 }
@@ -32,8 +32,6 @@ pub struct AuthQ {
     pub client_id: String,
     pub token: String
 }
-
-pub type Token = String;
 
 impl Auth {
 

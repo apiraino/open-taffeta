@@ -29,7 +29,7 @@ pub struct Door {
 
 impl User {
     // generate tokens for signup + logins
-    pub fn to_user_auth(&self) -> Auth {
+    pub fn to_auth(&self) -> Auth {
         Auth::new(self.id, &self.email)
     }
 }

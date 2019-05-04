@@ -111,7 +111,7 @@ pub fn login_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIRespon
     match user.len() {
         1 => {
             ok().data(json!({
-                "auth": user[0].to_user_auth(),
+                "auth": user[0].to_auth(),
                 "is_active": user[0].is_active
             }))
         },
@@ -172,7 +172,7 @@ pub fn signup_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIRespo
                 .filter(email.eq(&new_user.email))
                 .first(&*conn)
                 .unwrap_or_else(|_| panic!("error getting user with email {}", new_user.email));
-            let user_auth = user.to_user_auth();
+            let user_auth = user.to_auth();
             auth::save_auth_token(conn, &user_auth);
             let resp_data = json!({
                 "auth": user_auth,
