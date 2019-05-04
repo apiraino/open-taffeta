@@ -14,14 +14,13 @@ pub mod config;
 pub mod crypto;
 
 pub mod db;
-// TODO: this is wrong, used only for tests
+// TODO: pub here is wrong, used only for tests
 pub mod models;
 pub mod serializers;
 pub mod responses;
 pub mod routes;
-// TODO: pub here is wrong, used only for tests
 pub mod schema;
-mod auth;
+pub mod auth;
 
 use rocket::config::Environment;
 

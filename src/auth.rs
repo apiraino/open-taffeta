@@ -88,26 +88,44 @@ impl<'a, 'r> FromRequest<'a, 'r> for Auth {
 
 fn extract_auth_from_request(request: &Request, conn: Conn) -> Option<Auth> {
     use crate::schema::userauth::dsl::*;
-
     let header = request.headers().get("authorization").next();
     if let Some(rcvd_token) = header {
-
-        let user_auth : AuthQ = userauth
+        let auth_record : AuthQ = userauth
             .filter(token.eq(rcvd_token))
             .get_result(&*conn)
-            .expect(&format!("get user auth failed for token {}", rcvd_token));
+            .expect(&format!("get auth failed for token {}", rcvd_token));
 
-        // TODO: check against != 1 records returned
-
-        let user_auth_q : Auth = Auth {
-            exp: user_auth.exp,
-            user_id: user_auth.user_id,
-            client_id: user_auth.client_id,
-            token: user_auth.token
-        };
-        return Some(user_auth_q);
+        if is_valid_token(&auth_record) {
+            let user_auth : Auth = Auth {
+                exp: auth_record.exp,
+                user_id: auth_record.user_id,
+                client_id: auth_record.client_id,
+                token: auth_record.token
+            };
+            return Some(user_auth);
+        }
     }
     None
+}
+
+fn is_valid_token(auth: &AuthQ) -> bool {
+
+    // TODO: check this
+    // http://docs.diesel.rs/chrono/struct.DateTime.html#method.naive_utc
+
+    // add an hour because we're not on UTC yet
+    let now = chrono::NaiveDateTime::from_timestamp(
+        (chrono::Utc::now() + chrono::Duration::hours(1))
+            .timestamp(), 0);
+    if now <= auth.exp {
+        eprintln!(">>> token still valid: {} >= {} ({})", auth.exp, now,
+                  (now <= auth.exp));
+        return true;
+    } else {
+        eprintln!(">>> Token has expired: {} >= {} ({})", auth.exp, now,
+                  (now <= auth.exp));
+    }
+    false
 }
 
 pub fn save_auth_token(conn: Conn, auth: &Auth) {
