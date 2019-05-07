@@ -120,8 +120,6 @@ fn is_valid_token(auth: &AuthQ) -> bool {
 
 pub fn save_auth_token(conn: Conn, auth: &Auth) -> Result<(), &str> {
 
-    // TODO: trim expired tokens
-
     // match diesel::insert_into(userauth).values(auth).execute(&*conn) {
     //     Err(err) => {
     //         if let diesel::result::Error::DatabaseError(
@@ -146,8 +144,8 @@ pub fn save_auth_token(conn: Conn, auth: &Auth) -> Result<(), &str> {
     }
 
     // Count auth tokens
-    let auth_tokens : Vec<i32> = userauth::table
-        .select(userauth::id)
+    let auth_tokens : Vec<(i32, String)> = userauth::table
+        .select((userauth::id, userauth::exp))
         .filter(userauth::user_id.eq(auth.user_id))
         .order(userauth::exp.asc())
         .load(&*conn)
@@ -157,36 +155,49 @@ pub fn save_auth_token(conn: Conn, auth: &Auth) -> Result<(), &str> {
         ));
     eprintln!(">>> For user id {} found {} tokens", auth.user_id, auth_tokens.len());
 
-    // ... and trim expired ones
-    // let expiry = chrono::NaiveDateTime
-    // let delete_res = diesel::delete(
-    //     userauth::table.filter(
-    //         userauth::exp.ge_any(tokens_in_excess)
-    //     )
-    // )
-    //     .execute(&*conn)
-    //     .expect(&format!(
-    //         "error trimming auth tokens for user id {}",
-    //         auth.user_id
-    //     ));
+    trim_tokens(conn, auth.user_id, auth_tokens)?;
+
+    Ok(())
+}
+
+fn trim_tokens(conn: Conn, user_id: i32, auth_tokens: Vec<(i32, String)>) -> Result<(), &'static str> {
+
+    // TODO: see if we can refactor into a single delete query
+
+    // Trim expired ones (with tolerance)
+    if 1 ==! diesel::delete(
+        userauth::table.filter(
+            userauth::exp.lt(get_now!())
+        )
+    )
+        .execute(&*conn)
+        .expect(&format!(
+            "error trimming auth tokens for user id {}",
+            user_id
+        ))
+    {
+        return Err("Tokens delete failed (for reasons...)");
+    }
 
     // ... and trim excess
     let curr_token_count = auth_tokens.len() as i64;
     if curr_token_count > config::MAX_AUTH_TOKEN {
         let num_tokens_in_excess = (curr_token_count - config::MAX_AUTH_TOKEN) as usize;
         let tokens_in_excess = &auth_tokens[..num_tokens_in_excess];
-
-        let delete_res = diesel::delete(
+        let tokens_ids = tokens_in_excess.iter().map(|(x, _y)| x).collect::<Vec<_>>();
+        if 1 ==! diesel::delete(
             userauth::table.filter(
-                userauth::id.eq_any(tokens_in_excess)
+                userauth::id.eq_any(tokens_ids)
             )
         )
             .execute(&*conn)
             .expect(&format!(
                 "error trimming auth tokens for user id {}",
-                auth.user_id
-            ));
-        eprintln!("Delete result: {}", delete_res);
+                user_id
+            ))
+        {
+            return Err("Tokens delete failed (for reasons...)");
+        }
     }
     Ok(())
 }
