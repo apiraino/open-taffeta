@@ -228,7 +228,7 @@ fn test_user_expire_auth_token() {
     let client = Client::new();
 
     // create a bunch of tokens
-    let expiry_date_far = chrono::NaiveDateTime::parse_from_str("2015-09-05 23:56:04", "%Y-%m-%d %H:%M:%S").unwrap();
+    let expiry_date_far_expired = chrono::NaiveDateTime::parse_from_str("2015-09-05 23:56:04", "%Y-%m-%d %H:%M:%S").unwrap();
     let expiry_date_close = chrono::NaiveDateTime::from_timestamp(
         (chrono::Utc::now() + chrono::Duration::hours(1))
             .timestamp(), 0);
@@ -236,12 +236,33 @@ fn test_user_expire_auth_token() {
         (chrono::Utc::now() + chrono::Duration::hours(1) - chrono::Duration::seconds(1) )
             .timestamp(), 0);
 
-    let auth = state.create_auth(&user, expiry_date_far).unwrap();
+    let auth = state.create_auth(user.id, &user.email, expiry_date_far_expired).unwrap();
     common::get_user_detail(&client, user.id, auth.token, StatusCode::UNAUTHORIZED);
-    let auth = state.create_auth(&user, expiry_date_close).unwrap();
+    let auth = state.create_auth(user.id, &user.email, expiry_date_close).unwrap();
     common::get_user_detail(&client, user.id, auth.token, StatusCode::OK);
-    let auth = state.create_auth(&user, expiry_date_just_expired).unwrap();
+    let auth = state.create_auth(user.id, &user.email, expiry_date_just_expired).unwrap();
     common::get_user_detail(&client, user.id, auth.token, StatusCode::UNAUTHORIZED);
+}
+
+#[test]
+fn test_user_login_trim_expired_auth_token() {
+    let state = DbState::new();
+    // let (user, password) = state.create_user("user@domain.com", true);
+    let client = Client::new();
+    let (user_data, password, _) = common::signup_user(&state.conn, "josh@domain.com", true);
+    let user_id = user_data.user.id;
+
+    // create an expired token
+    let expiry_date_expired = chrono::NaiveDateTime::parse_from_str("2017-09-05 23:56:04", "%Y-%m-%d %H:%M:%S").unwrap();
+    state.create_auth(user_id, &user_data.user.email, expiry_date_expired).unwrap();
+    assert_eq!(2, state.count_auth_token(user_data.user.id));
+    let login_data = json!({
+        "password": password,
+        "email": user_data.user.email
+    });
+    common::user_login(&client, &login_data, StatusCode::OK).unwrap();
+    // (-1, +1) we removed the expired token and added the new one
+    assert_eq!(2, state.count_auth_token(user_data.user.id));
 }
 
 #[test]
