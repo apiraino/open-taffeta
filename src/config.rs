@@ -16,6 +16,18 @@ macro_rules! get_token_duration {
     };
 }
 
+#[macro_export]
+macro_rules! get_now {
+    () => {
+        // create a DateTime+UTC
+        // get the UNIX timestamp
+        // create a naive DateTime, we loose UTC
+        // add an hour because we're not on UTC yet
+        chrono::NaiveDateTime::from_timestamp((chrono::Utc::now() + chrono::Duration::hours(1)).timestamp(), 0)
+    };
+}
+
+
 pub fn get_secret() -> String {
     env::var("SECRET").expect("SECRET env var")
 }

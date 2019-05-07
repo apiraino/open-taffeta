@@ -106,11 +106,7 @@ fn extract_auth_from_request(request: &Request, conn: Conn) -> Option<Auth> {
 }
 
 fn is_valid_token(auth: &AuthQ) -> bool {
-    // add an hour because we're not on UTC yet
-    let now = chrono::NaiveDateTime::from_timestamp(
-        (chrono::Utc::now() + chrono::Duration::hours(1))
-            .timestamp(), 0);
-
+    let now = get_now!();
     if now <= auth.exp {
         eprintln!(">>> token still valid: {} >= {} ({})", auth.exp, now,
                   (now <= auth.exp));
