@@ -24,7 +24,7 @@ pub struct Auth {
     pub token: String
 }
 
-#[derive(Queryable)]
+#[derive(Queryable, Debug, Clone)]
 pub struct AuthQ {
     pub id: i32,
     pub user_id: i32,
@@ -85,11 +85,10 @@ impl<'a, 'r> FromRequest<'a, 'r> for Auth {
 }
 
 fn extract_auth_from_request(request: &Request, conn: Conn) -> Option<Auth> {
-    use crate::schema::userauth::dsl::*;
     let header = request.headers().get("authorization").next();
     if let Some(rcvd_token) = header {
-        let auth_record : AuthQ = userauth
-            .filter(token.eq(rcvd_token))
+        let auth_record : AuthQ = userauth::table
+            .filter(userauth::token.eq(rcvd_token))
             .get_result(&*conn)
             .expect(&format!("get auth failed for token {}", rcvd_token));
 
@@ -107,14 +106,11 @@ fn extract_auth_from_request(request: &Request, conn: Conn) -> Option<Auth> {
 }
 
 fn is_valid_token(auth: &AuthQ) -> bool {
-
-    // TODO: check this
-    // http://docs.diesel.rs/chrono/struct.DateTime.html#method.naive_utc
-
     // add an hour because we're not on UTC yet
     let now = chrono::NaiveDateTime::from_timestamp(
         (chrono::Utc::now() + chrono::Duration::hours(1))
             .timestamp(), 0);
+
     if now <= auth.exp {
         eprintln!(">>> token still valid: {} >= {} ({})", auth.exp, now,
                   (now <= auth.exp));
@@ -126,24 +122,75 @@ fn is_valid_token(auth: &AuthQ) -> bool {
     false
 }
 
-pub fn save_auth_token(conn: Conn, auth: &Auth) {
-    use crate::schema::userauth::dsl::*;
-    // TODO: rotate tokens
-    // TODO: bubble up an exception
-    match diesel::insert_into(userauth).values(auth).execute(&*conn) {
-        Err(err) => {
-            if let diesel::result::Error::DatabaseError(
-                DatabaseErrorKind::UniqueViolation,
-                _,
-            ) = err
-            {
-                eprintln!("auth:save_auth_token Error saving token (Uniqueviolation)");
-            } else {
-                eprintln!("auth:save_auth_token Error saving token (other error...)");
-            }
-        },
-        Ok(_) => {
-            eprintln!("auth:save_auth_token: Token saved successfully");
-        }
-    };
+pub fn save_auth_token(conn: Conn, auth: &Auth) -> Result<(), &str> {
+
+    // TODO: trim expired tokens
+
+    // match diesel::insert_into(userauth).values(auth).execute(&*conn) {
+    //     Err(err) => {
+    //         if let diesel::result::Error::DatabaseError(
+    //             DatabaseErrorKind::UniqueViolation,
+    //             _,
+    //         ) = err
+    //         {
+    //             eprintln!("auth:save_auth_token Error saving token (Uniqueviolation)");
+    //         } else {
+    //             eprintln!("auth:save_auth_token Error saving token (other error...)");
+    //         }
+    //     },
+    //     Ok(_) => {
+    //         eprintln!("auth:save_auth_token: Token saved successfully");
+    //     }
+    // };
+
+    let insert_res = diesel::insert_into(userauth::table).values(auth).execute(&*conn);
+    if let Err(diesel::result::Error::DatabaseError(DatabaseErrorKind::UniqueViolation,_,)) = insert_res {
+        eprintln!("auth:save_auth_token Error saving token (Uniqueviolation)");
+        return Err("auth:save_auth_token Error saving token (Uniqueviolation)");
+    }
+
+    // Count auth tokens
+    let auth_tokens : Vec<i32> = userauth::table
+        .select(userauth::id)
+        .filter(userauth::user_id.eq(auth.user_id))
+        .order(userauth::exp.asc())
+        .load(&*conn)
+        .expect(&format!(
+            "error getting token count for user id {}",
+            auth.user_id
+        ));
+    eprintln!(">>> For user id {} found {} tokens", auth.user_id, auth_tokens.len());
+
+    // ... and trim expired ones
+    // let expiry = chrono::NaiveDateTime
+    // let delete_res = diesel::delete(
+    //     userauth::table.filter(
+    //         userauth::exp.ge_any(tokens_in_excess)
+    //     )
+    // )
+    //     .execute(&*conn)
+    //     .expect(&format!(
+    //         "error trimming auth tokens for user id {}",
+    //         auth.user_id
+    //     ));
+
+    // ... and trim excess
+    let curr_token_count = auth_tokens.len() as i64;
+    if curr_token_count > config::MAX_AUTH_TOKEN {
+        let num_tokens_in_excess = (curr_token_count - config::MAX_AUTH_TOKEN) as usize;
+        let tokens_in_excess = &auth_tokens[..num_tokens_in_excess];
+
+        let delete_res = diesel::delete(
+            userauth::table.filter(
+                userauth::id.eq_any(tokens_in_excess)
+            )
+        )
+            .execute(&*conn)
+            .expect(&format!(
+                "error trimming auth tokens for user id {}",
+                auth.user_id
+            ));
+        eprintln!("Delete result: {}", delete_res);
+    }
+    Ok(())
 }

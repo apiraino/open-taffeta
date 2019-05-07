@@ -102,24 +102,33 @@ pub fn login_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIRespon
     };
 
     let err_msg = format!("error retrieving active user with email={}", logmein.email);
-    let user: Vec<User> = users
+    let user_list: Vec<User> = users
         .filter(is_active.eq(true))
         .filter(email.eq(logmein.email.clone()))
         .load(&*conn)
         .expect(&err_msg);
 
-    match user.len() {
+    match user_list.len() {
         1 => {
+            let user_auth = user_list[0].to_auth();
+            if let Err(err) = auth::save_auth_token(conn, &user_auth) {
+                let resp_data = json!({
+                    "status": "error",
+                    "detail": format!("Failed to save new auth token for email {}: {}",
+                                      logmein.email, err)
+                });
+                return bad_request().data(resp_data);
+            }
             ok().data(json!({
-                "auth": user[0].to_auth(),
-                "is_active": user[0].is_active
+                "auth": user_auth,
+                "is_active": user_list[0].is_active
             }))
         },
         _ => {
             let resp_data = json!({
                 "status": "error",
                 "detail": format!("Wrong records count found ({}) for email={}",
-                                  user.len(), logmein.email)
+                                  user_list.len(), logmein.email)
             });
             bad_request().data(resp_data)
         }
@@ -166,14 +175,21 @@ pub fn signup_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIRespo
             }
         },
         Ok(_) => {
-            // TODO: select all of them, then count record
+            // TODO: select all, then check count (must be 1)
             // TODO: remove the panic -_-
             let user: User = users
                 .filter(email.eq(&new_user.email))
                 .first(&*conn)
                 .unwrap_or_else(|_| panic!("error getting user with email {}", new_user.email));
             let user_auth = user.to_auth();
-            auth::save_auth_token(conn, &user_auth);
+            if let Err(err) = auth::save_auth_token(conn, &user_auth) {
+                let resp_data = json!({
+                    "status": "error",
+                    "detail": format!("Failed to save new auth token for email {}: {}",
+                                      user.email, err)
+                });
+                return bad_request().data(resp_data);
+            }
             let resp_data = json!({
                 "auth": user_auth,
                 "is_active": user.is_active
