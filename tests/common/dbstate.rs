@@ -8,9 +8,7 @@ use crate::common::dbstate::diesel::prelude::*;
 use std::env;
 
 use open_taffeta_lib::models::User;
-use open_taffeta_lib::db::Conn;
 use open_taffeta_lib::auth::Auth;
-use open_taffeta_lib::auth::{self as auth};
 use open_taffeta_lib::schema::users::dsl::*;
 use open_taffeta_lib::schema::doors::dsl::*;
 use open_taffeta_lib::schema::userauth::dsl::*;
@@ -62,6 +60,18 @@ impl DbState {
         } else {
             None
         }
+    }
+
+    pub fn count_auth_token(&self, uid: i32) -> i64 {
+        let auth_count = userauth
+            .filter(user_id.eq(user_id))
+            .count()
+            .get_result(&self.conn)
+            .expect(&format!(
+                "error getting token count for user id {}",
+                uid
+            ));
+        auth_count
     }
 
     pub fn assert_empty_users(&self) {

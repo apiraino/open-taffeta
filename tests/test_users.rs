@@ -206,7 +206,6 @@ fn test_user_login() {
 #[test]
 fn test_user_login_generate_auth_token() {
     let state = DbState::new();
-    let api_base_uri = common::api_base_url();
     let client = Client::new();
     let (user_data, password, token) = common::signup_user(&state.conn, "josh@domain.com", true);
     let user_id = user_data.user.id;
@@ -217,25 +216,13 @@ fn test_user_login_generate_auth_token() {
     });
 
     // login again, token returned should be different
-    let url = &format!("/login");
-    let mut response = client
-        .post(api_base_uri.join(url).unwrap())
-        .json(&login_data)
-        .send()
-        .expect("Login failed");
-    assert_eq!(response.status(), StatusCode::OK);
-    let resp_data: ResponseLoginSignup = response.json().expect("Failed to unwrap the login response");
+    let resp_data = common::user_login(&client, &login_data, StatusCode::OK).unwrap();
     assert_eq!(resp_data.auth.user_id, user_id);
     assert_ne!(resp_data.auth.token, token);
 }
 
 #[test]
-fn test_user_login_rotate_auth_token() {
-    assert!(true, "TODO: login 5 times, check token rotation");
-}
-
-#[test]
-fn test_user_login_expire_auth_token() {
+fn test_user_expire_auth_token() {
     let state = DbState::new();
     let (user, _) = state.create_user("user@domain.com", false);
     let client = Client::new();
@@ -258,6 +245,25 @@ fn test_user_login_expire_auth_token() {
 }
 
 #[test]
-fn test_user_login_renew_auth_token() {
-    assert!(true, "TODO");
+fn test_user_login_rotate_auth_token() {
+
+    let state = DbState::new();
+    state.clean_tables();
+    let client = Client::new();
+    let (user_data, password, first_token) = common::signup_user(&state.conn, "josh@domain.com", true);
+    assert_eq!(state.count_auth_token(user_data.user.id), 1);
+
+    // moar tokens generated
+    let login_data = json!({
+        "password": password,
+        "email": user_data.user.email
+    });
+    let resp_data = common::user_login(&client, &login_data, StatusCode::OK).unwrap();
+    assert_ne!(first_token, resp_data.auth.token);
+    common::user_login(&client, &login_data, StatusCode::OK).unwrap();
+
+    for _ in 0..25 {
+        common::user_login(&client, &login_data, StatusCode::OK).unwrap();
+    }
+    assert_eq!(state.count_auth_token(user_data.user.id), open_taffeta_lib::config::MAX_AUTH_TOKEN);
 }

@@ -10,7 +10,7 @@ use reqwest::header::{AUTHORIZATION, HeaderValue};
 // need "Value" because serde serializers
 // exported from Rocket 0.4 get compiler confused (?)
 // use rocket_contrib::json::JsonValue;
-// use serde_json::Value;
+use serde_json::Value;
 // use serde_derive::{Deserialize};
 // use open_taffeta_lib::models::{UserAuth, Door, User};
 
@@ -78,7 +78,22 @@ pub fn get_user_detail(client: &Client, user_id: i32, auth_token: String, expect
     assert_eq!(response.status(), expected_status_code);
     if response.status() == StatusCode::OK {
         let r : ResponseUserDetail = response.json().expect("Error opening user detail response");
-        Some(r);
+        return Some(r);
+    }
+    None
+}
+
+pub fn user_login(client: &Client, login_data: &Value, expected_status_code: StatusCode) -> Option<ResponseLoginSignup> {
+    let api_base_uri = api_base_url();
+    let mut response = client
+        .post(api_base_uri.join("/login").unwrap())
+        .json(&login_data)
+        .send()
+        .expect("Login failed");
+    assert_eq!(response.status(), expected_status_code);
+    if response.status() == StatusCode::OK {
+        let resp_data: ResponseLoginSignup = response.json().expect("Failed to unwrap the login response");
+        return Some(resp_data);
     }
     None
 }
