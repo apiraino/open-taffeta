@@ -87,10 +87,17 @@ impl<'a, 'r> FromRequest<'a, 'r> for Auth {
 fn extract_auth_from_request(request: &Request, conn: Conn) -> Option<Auth> {
     let header = request.headers().get("authorization").next();
     if let Some(rcvd_token) = header {
-        let auth_record : AuthQ = userauth::table
+        let q = userauth::table
             .filter(userauth::token.eq(rcvd_token))
-            .get_result(&*conn)
-            .expect(&format!("get auth failed for token {}", rcvd_token));
+            .get_result(&*conn);
+        let auth_record : AuthQ = match q {
+            Ok(x) => x,
+            Err(err) =>  {
+                eprintln!("get auth failed for token {}; {}",
+                          rcvd_token, err);
+                return None;
+            }
+        };
 
         if is_valid_token(&auth_record) {
             let user_auth : Auth = Auth {
