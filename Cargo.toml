@@ -37,7 +37,6 @@ assets = [
 assets = [
     ["target/arm-unknown-linux-gnueabihf/release/open-taffeta", "usr/bin/", "755"],
     ["README.md", "usr/share/doc/open-taffeta/README", "644"],
-    ["README.md", "usr/share/doc/open-taffeta/README", "644"],
     ["scripts/open-taffeta.service","etc/systemd/system/","644"],
     ["scripts/settings","etc/open-taffeta/settings","644"],
     ["Rocket.toml","etc/open-taffeta/Rocket.toml","644"],
@@ -56,7 +55,6 @@ rocket_cors = "0.4.0"
 validator = "0.8.0"
 validator_derive = "0.8.0"
 
-jsonwebtoken = "5.0.1"
 slug = "0.1.4"
 
 diesel = { version = "1.4.1", features = ["chrono", "sqlite", "r2d2"] }

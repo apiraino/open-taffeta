@@ -15,19 +15,19 @@ use rocket_contrib::json::{Json, JsonValue};
 use validator::{Validate, ValidationError};
 use validator_derive::Validate;
 use serde_derive::{Serialize, Deserialize};
-use crate::auth::Auth;
+use crate::auth::{Auth, self as auth};
 use crate::crypto;
 
 #[derive(Serialize, Deserialize, Validate, Debug, Insertable)]
 #[table_name = "users"]
-pub struct NewUser {
+pub struct UserLoginSignup {
     #[validate(
         length(min = "6", message = "Password too short"),
         custom = "validate_pwd_strength"
     )]
     password: String,
     #[validate(email(message = "Invalid email"))]
-    email: String,
+    email: String
 }
 
 pub fn validate_pwd_strength(pwd: &str) -> Result<(), ValidationError> {
@@ -48,12 +48,12 @@ pub fn validate_pwd_strength(pwd: &str) -> Result<(), ValidationError> {
     Ok(())
 }
 
-#[get("/users?<is_active>", format = "application/json")]
-pub fn get_users(conn: db::Conn, _auth: Auth, is_active: Option<bool>) -> JsonValue {
-    let users_rs : Vec<User> = match is_active {
+#[get("/users?<active>", format = "application/json")]
+pub fn get_users(conn: db::Conn, _auth: Auth, active: Option<bool>) -> JsonValue {
+    let users_rs : Vec<User> = match active {
         Some(_) => {
             users
-                .filter(active.eq(is_active.unwrap_or_else(|| false)))
+                .filter(is_active.eq(active.unwrap_or_else(|| false)))
                 .load(&*conn)
                 .expect("error retrieving users")
         },
@@ -66,55 +66,80 @@ pub fn get_users(conn: db::Conn, _auth: Auth, is_active: Option<bool>) -> JsonVa
     json!({ "users": users_rs })
 }
 
-#[get("/user/<user_id>", format = "application/json")]
+#[get("/users/<user_id>", format = "application/json")]
 pub fn get_user(conn: db::Conn, _auth: Auth, user_id: i32) -> APIResponse {
-    let user: Vec<User> = users
-        .filter(active.eq(true))
+    let user_result : Result<User, diesel::result::Error> = users
+        // .filter(is_active.eq(true))
         .filter(id.eq(user_id))
-        .load(&*conn)
-        .unwrap_or_else(|_| panic!("error retrieving user id={}", user_id));
+        .get_result(&*conn);
 
-    if user.len() != 1 {
-        let resp_data = json!({
-            "status": "error",
-            "detail": format!("Wrong records count found ({}) for user_id={}",
-                              user.len(), user_id)
-        });
-        bad_request().data(resp_data);
+    match user_result {
+        Err(diesel::NotFound) => {
+            let resp_data = json!({
+                "status": "error",
+                "detail": format!("error retrieving active user id {}", user_id)
+            });
+            bad_request().data(resp_data)
+        },
+        Err(err) => {
+            let resp_data = json!({
+                "status": "error",
+                "detail": format!("error executing query: {}", err)
+            });
+            bad_request().data(resp_data)
+        }
+        Ok(user) =>  {
+            ok().data(json!({ "user": user }))
+        }
     }
-    ok().data(json!({ "user": user[0] }))
 }
 
 #[post("/login", data = "<user_data>", format = "application/json")]
-pub fn login_user(conn: db::Conn, user_data: Json<NewUser>) -> APIResponse {
-    let logmein = NewUser {
+pub fn login_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIResponse {
+    let logmein = UserLoginSignup {
         password: user_data.password.clone(),
-        email: user_data.email.clone(),
+        email: user_data.email.clone()
     };
 
-    let user: Vec<User> = users
-        .filter(active.eq(true))
+    let err_msg = format!("error retrieving active user with email={}", logmein.email);
+    let user_list: Vec<User> = users
+        .filter(is_active.eq(true))
         .filter(email.eq(logmein.email.clone()))
         .load(&*conn)
-        .unwrap_or_else(|_| panic!("error retrieving user email={}", logmein.email));
+        .expect(&err_msg);
 
-    if user.len() != 1 {
-        let resp_data = json!({
-            "status": "error",
-            "detail": format!("Wrong records count found ({}) for email={}",
-                              user.len(), logmein.email)
-        });
-        bad_request().data(resp_data);
+    match user_list.len() {
+        1 => {
+            let user_auth = user_list[0].to_auth();
+            if let Err(err) = auth::save_auth_token(conn, &user_auth) {
+                let resp_data = json!({
+                    "status": "error",
+                    "detail": format!("Failed to save new auth token for email {}: {}",
+                                      logmein.email, err)
+                });
+                return bad_request().data(resp_data);
+            }
+            ok().data(json!({
+                "auth": user_auth,
+                "is_active": user_list[0].is_active
+            }))
+        },
+        _ => {
+            let resp_data = json!({
+                "status": "error",
+                "detail": format!("Wrong records count found ({}) for email={}",
+                                  user_list.len(), logmein.email)
+            });
+            bad_request().data(resp_data)
+        }
     }
-    let user_auth = user[0].to_user_auth();
-    ok().data(json!({ "user": user_auth }))
 }
 
 #[post("/signup", data = "<user_data>", format = "application/json")]
-pub fn signup_user(conn: db::Conn, user_data: Json<NewUser>) -> APIResponse {
-    let mut new_user = NewUser {
+pub fn signup_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIResponse {
+    let mut new_user = UserLoginSignup {
         password: user_data.password.clone(),
-        email: user_data.email.clone(),
+        email: user_data.email.clone()
     };
 
     let res = new_user.validate();
@@ -125,7 +150,7 @@ pub fn signup_user(conn: db::Conn, user_data: Json<NewUser>) -> APIResponse {
             "status":"error",
             "detail": err_msg
         });
-        bad_request().data(resp_data);
+        return bad_request().data(resp_data);
     }
     new_user.password = crypto::hash_password(new_user.password);
 
@@ -136,31 +161,39 @@ pub fn signup_user(conn: db::Conn, user_data: Json<NewUser>) -> APIResponse {
                 _,
             ) = err
             {
-                let err_msg = format!("DB error - record already exists: {:?}", err);
-                println!("{:?}", err_msg);
                 let resp_data = json!({
                     "status":"error",
-                    "detail": err_msg
+                    "detail": format!("DB error - record already exists: {:?}", err)
                 });
                 bad_request().data(resp_data)
             } else {
-                let err_msg = format!("DB error: {:?}", err);
-                println!("{:?}", err_msg);
                 let resp_data = json!({
                     "status":"error",
-                    "detail": err_msg
+                    "detail": format!("DB error: {:?}", err)
                 });
                 bad_request().data(resp_data)
             }
-        }
+        },
         Ok(_) => {
+            // TODO: select all, then check count (must be 1)
+            // TODO: remove the panic -_-
             let user: User = users
                 .filter(email.eq(&new_user.email))
                 .first(&*conn)
-                .unwrap_or_else(|_| panic!("error getting user with email={}", new_user.email));
-
-            let user_auth = user.to_user_auth();
-            let resp_data = json!({ "user": user_auth });
+                .unwrap_or_else(|_| panic!("error getting user with email {}", new_user.email));
+            let user_auth = user.to_auth();
+            if let Err(err) = auth::save_auth_token(conn, &user_auth) {
+                let resp_data = json!({
+                    "status": "error",
+                    "detail": format!("Failed to save new auth token for email {}: {}",
+                                      user.email, err)
+                });
+                return bad_request().data(resp_data);
+            }
+            let resp_data = json!({
+                "auth": user_auth,
+                "is_active": user.is_active
+            });
             created().data(resp_data)
         }
     }

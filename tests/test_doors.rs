@@ -14,11 +14,13 @@ mod common;
 
 use crate::common::dbstate::DbState;
 
+use open_taffeta_lib::serializers::doors::{ResponseDoorCreated};
+
 // TODO: have a look here
 // https://bitbucket.org/dorianpula/rookeries/src/master/tests/test_site_management.rs
 
 #[test]
-fn test_bad_auth() {
+fn test_door_bad_auth() {
     DbState::new();
     let api_base_uri = common::api_base_url();
     let client = Client::new();
@@ -38,10 +40,10 @@ fn test_bad_auth() {
 }
 
 #[test]
-fn test_create() {
+fn test_door_create() {
     let state = DbState::new();
     let api_base_uri = common::api_base_url();
-    let (_, token) = common::signup_user("josh@domain.com");
+    let (_, _, token) = common::signup_user(&state.conn, "josh@domain.com", true);
     let client = Client::new();
 
     // check for 0 doors
@@ -71,12 +73,11 @@ fn test_create() {
 }
 
 #[test]
-fn test_delete() {
+fn test_door_delete() {
     let state = DbState::new();
     let api_base_uri = common::api_base_url();
-    let (_, token) = common::signup_user("josh@domain.com");
+    let (_, _, token) = common::signup_user(&state.conn, "josh@domain.com", true);
     let client = Client::new();
-
     // check for 0 doors
     state.assert_empty_doors();
 
@@ -92,7 +93,7 @@ fn test_delete() {
         .send()
         .unwrap();
     assert_eq!(response.status(), StatusCode::CREATED);
-    let door_data : common::ResponseDoorCreated = response.json().unwrap();
+    let door_data : ResponseDoorCreated = response.json().unwrap();
 
     // check new door
     let url = &format!("/door/{}", door_data.door.id);
@@ -107,11 +108,10 @@ fn test_delete() {
 
 // only available for local testing
 // #[test]
-fn test_buzz() {
-
-    DbState::new();
+fn test_door_buzz() {
+    let state = DbState::new();
     let api_base_uri = common::api_base_url();
-    let (_, token) = common::signup_user("josh@domain.com");
+    let (_, _, token) = common::signup_user(&state.conn, "josh@domain.com", true);
     let client = Client::new();
 
     let payload = json!({
@@ -125,7 +125,7 @@ fn test_buzz() {
         .send()
         .unwrap();
     assert_eq!(response.status(), StatusCode::CREATED);
-    let door_data : common::ResponseDoorCreated = response.json().unwrap();
+    let door_data : ResponseDoorCreated = response.json().unwrap();
 
     // knock the door
     let url = &format!("/door/{}", door_data.door.id);
