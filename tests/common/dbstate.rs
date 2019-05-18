@@ -75,11 +75,13 @@ impl DbState {
     }
 
     pub fn assert_empty_users(&self) {
-        assert_eq!(0, users::table.count().execute(&self.conn).unwrap());
+        assert_eq!(0, users::table.count().get_result::<i64>(&self.conn)
+                   .expect("Failed to get users count"));
     }
 
     pub fn assert_empty_doors(&self) {
-        assert_eq!(0, doors::table.count().execute(&self.conn).unwrap());
+        assert_eq!(0, doors::table.count().get_result::<i64>(&self.conn)
+                   .expect("Failed to get count"));
     }
 
     pub fn clean_tables(&self) {
