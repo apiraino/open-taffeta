@@ -1,7 +1,7 @@
 ## open-taffeta [![Build Status](https://travis-ci.org/apiraino/open-taffeta.svg?branch=master)](https://travis-ci.org/apiraino/open-taffeta)
 Raspberry Pi-hosted website controlling access to a building
 
-The mobile App that talks to this backend is [hosted here](https://gitlab.com/apiraino/flutter_door_buzzer).
+The mobile App interfacing to this backend is [hosted here](https://github.com/apiraino/open-taffeta-mobile-app).
 
 ### Rust installation
 
