@@ -48,8 +48,8 @@ name = "open_taffeta_lib"
 path = "src/lib.rs"
 
 [dependencies]
-rocket = { version = "0.4.0", features = ["tls"] }
-rocket_cors = "0.4.0"
+rocket = { version = "0.4.1", features = ["tls"] }
+rocket_cors = "0.5.0"
 
 # validation for input struct deserialized
 validator = "0.8.0"
@@ -57,26 +57,26 @@ validator_derive = "0.8.0"
 
 slug = "0.1.4"
 
-diesel = { version = "1.4.1", features = ["chrono", "sqlite", "r2d2"] }
+diesel = { version = "1.4.2", features = ["chrono", "sqlite", "r2d2"] }
 
-serde = "1.0.89"
-serde_derive = "1.0.89"
+serde = "1.0.91"
+serde_derive = "1.0.91"
 serde_json = "1.0.39"
 
 env_logger = "0.6.1"
 log = "0.4.6"
-dotenv = "0.13.0"
-dotenv_codegen = "0.11.0"
+dotenv = "0.14.1"
+dotenv_codegen = "0.14.1"
 chrono = { version = "0.4.6", features = ["serde"] }
-reqwest = "0.9.11"
+reqwest = "0.9.17"
 rand = "0.6.5"
 audit = "0.1.1"
-openssl-sys = "0.9.42"
+openssl-sys = "0.9.47"
 sha1 = "0.6.0"
 crypto-hash = "0.3.3"
 
 [dependencies.rocket_contrib]
-version = "0.4.0"
+version = "0.4.1"
 default-features = false
 features = ["json"]
 
