@@ -1,11 +1,12 @@
-use serde_derive::Deserialize;
+use serde_derive::{Deserialize, Serialize};
 use crate::auth::Auth;
 
-#[derive(Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct UserBaseResponse {
     pub id: i32,
     pub email: String,
-    pub is_active: bool
+    pub is_active: bool,
+    pub role: String
 }
 
 #[derive(Deserialize, Debug)]
@@ -21,10 +22,13 @@ pub struct ResponseUserDetail {
 #[derive(Deserialize, Debug)]
 pub struct ResponseLoginSignup {
     pub auth: Auth,
-    pub is_active: bool
+    // TODO: maybe return a UserBaseResponse?
+    pub is_active: bool,
+    pub role: String
 }
 
 #[derive(Deserialize, Debug)]
-pub struct ResponseSignupError {
+pub struct ResponseError {
+    pub status: String,
     pub detail: String
 }

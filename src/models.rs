@@ -5,9 +5,10 @@
 // AsChangeSet + Indentifiable => for `.save_changes()`
 // ... there are many more ...
 
-use serde_derive::{Serialize, Deserialize};
-use crate::schema::users;
+use crate::schema::{roles, users};
 use crate::auth::Auth;
+use serde_derive::{Serialize, Deserialize};
+use diesel::dsl::Select;
 
 #[derive(Queryable, Clone, Serialize, Deserialize, Debug, Default, Insertable, AsChangeset, Identifiable, PartialEq)]
 pub struct User {
@@ -27,9 +28,66 @@ pub struct Door {
     pub ring_ts: Option<i32>,
 }
 
+// TODO: maybe an enum will do
+// pub enum RoleName {
+//     ADMIN = 0,
+//     USER,
+// }
+
+pub const ROLE_ADMIN : &str = "admin";
+pub const ROLE_USER : &str = "user";
+
+#[derive(Debug, Identifiable, Queryable, Serialize, Deserialize, AsChangeset)]
+pub struct Role {
+    pub id: i32,
+    pub name: String,
+    pub user: Option<i32>
+}
+
+#[derive(Insertable, Queryable, Serialize, Deserialize, AsChangeset)]
+#[table_name = "roles"]
+pub struct RoleNew {
+    pub name: String,
+    pub user: Option<i32>
+}
+
+// type DieselResult<T> = Result<T, diesel::result::Error>;
+
+type AllColumns = (
+    users::id,
+    users::email,
+    users::is_active,
+);
+
+pub const ALL_COLUMNS: AllColumns = (
+    users::id,
+    users::email,
+    users::is_active
+);
+
+type All = Select<users::table, AllColumns>;
+
 impl User {
     // generate tokens for signup + logins
     pub fn to_auth(&self) -> Auth {
         Auth::new(self.id, &self.email)
     }
+
+    // TODO: make it work
+    pub fn no_pwd() -> All {
+        use crate::diesel::QueryDsl;
+        users::table.select(ALL_COLUMNS)
+    }
+
+    // TODO: make it work, see: http://diesel.rs/guides/composing-applications/
+    // pub fn with_role(conn: &diesel::SqliteConnection) ->
+    //     DieselResult<Vec<(User, Role)>>
+    // {
+    //     use crate::diesel::RunQueryDsl;
+    //     users::table
+    //         .inner_join(roles::table)
+    //         .select(roles::name)
+    //         .load(conn)
+    // }
+
 }

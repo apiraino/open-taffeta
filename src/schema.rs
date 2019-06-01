@@ -10,6 +10,14 @@ table! {
 }
 
 table! {
+    roles (id) {
+        id -> Integer,
+        name -> Text,
+        user -> Nullable<Integer>,
+    }
+}
+
+table! {
     userauth (id) {
         id -> Integer,
         user_id -> Integer,
@@ -28,8 +36,11 @@ table! {
     }
 }
 
+joinable!(roles -> users (user));
+
 allow_tables_to_appear_in_same_query!(
     doors,
+    roles,
     userauth,
     users,
 );

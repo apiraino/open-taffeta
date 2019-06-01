@@ -1,8 +1,8 @@
 #![allow(proc_macro_derive_resolution_fallback)]
 use crate::db;
-use crate::models::User;
+use crate::models::{self as models, Role, RoleNew, User};
 use crate::responses::{ok, bad_request, created, APIResponse};
-use crate::schema::users;
+use crate::schema::{roles, users};
 use crate::schema::users::dsl::*;
 use diesel::prelude::*;
 use diesel::result::DatabaseErrorKind;
@@ -11,12 +11,13 @@ use rocket_contrib::json;
 // - Json<T> does not change anywhere.
 // - Json<Value> as a responder changes to JsonValue
 // - The new JsonValue is only really interesting as a Responder
-use rocket_contrib::json::{Json, JsonValue};
+use rocket_contrib::json::Json;
 use validator::{Validate, ValidationError};
 use validator_derive::Validate;
 use serde_derive::{Serialize, Deserialize};
 use crate::auth::{Auth, self as auth};
 use crate::crypto;
+use crate::serializers::users::UserBaseResponse;
 
 #[derive(Serialize, Deserialize, Validate, Debug, Insertable)]
 #[table_name = "users"]
@@ -48,32 +49,48 @@ pub fn validate_pwd_strength(pwd: &str) -> Result<(), ValidationError> {
     Ok(())
 }
 
+fn attach_role_to_user(u: User, r: Role) -> UserBaseResponse {
+    UserBaseResponse {
+        id: u.id,
+        email: u.email,
+        is_active: u.is_active,
+        role: r.name
+    }
+}
+
 #[get("/users?<active>", format = "application/json")]
-pub fn get_users(conn: db::Conn, _auth: Auth, active: Option<bool>) -> JsonValue {
-    let users_rs : Vec<User> = match active {
+pub fn get_users(conn: db::Conn, _auth: Auth, active: Option<bool>) -> APIResponse {
+    let users_rs : Vec<(User, Role)> = match active {
         Some(_) => {
-            users
-                .filter(is_active.eq(active.unwrap_or_else(|| false)))
+            users::table
+                .inner_join(roles::table)
+                .filter(users::is_active.eq(active.unwrap_or_else(|| false)))
                 .load(&*conn)
-                .expect("error retrieving users")
+                .expect("error retrieving active users")
         },
         None => {
-            users
+            users::table
+                .inner_join(roles::table)
                 .load(&*conn)
                 .expect("error retrieving users")
         }
     };
-    json!({ "users": users_rs })
+
+    let payload : Vec<UserBaseResponse> = users_rs
+        .into_iter()
+        .map(|(user, role)| attach_role_to_user(user,role) )
+        .collect();
+    ok().data( json!({ "users": payload }) )
 }
 
 #[get("/users/<user_id>", format = "application/json")]
 pub fn get_user(conn: db::Conn, _auth: Auth, user_id: i32) -> APIResponse {
-    let user_result : Result<User, diesel::result::Error> = users
-        // .filter(is_active.eq(true))
-        .filter(id.eq(user_id))
+    let query_result : Result<(User, Role), diesel::result::Error> = users::table
+        .inner_join(roles::table)
+        .filter(users::id.eq(user_id))
         .get_result(&*conn);
 
-    match user_result {
+    match query_result {
         Err(diesel::NotFound) => {
             let resp_data = json!({
                 "status": "error",
@@ -88,8 +105,8 @@ pub fn get_user(conn: db::Conn, _auth: Auth, user_id: i32) -> APIResponse {
             });
             bad_request().data(resp_data)
         }
-        Ok(user) =>  {
-            ok().data(json!({ "user": user }))
+        Ok((user, role)) =>  {
+            ok().data(json!({"user": attach_role_to_user(user,role)}))
         }
     }
 }
@@ -102,15 +119,20 @@ pub fn login_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIRespon
     };
 
     let err_msg = format!("error retrieving active user with email={}", logmein.email);
-    let user_list: Vec<User> = users
-        .filter(is_active.eq(true))
-        .filter(email.eq(logmein.email.clone()))
+
+    // examples
+    // https://github.com/ayourtch/diesel-join-example/blob/master/src/lib.rs
+    // TODO: use `.select((tbl1::fld1, tbl2::fld2))` to get only some fields
+    let user_rs : Vec<(User, Role)> = users::table
+        .inner_join(roles::table)
+        .filter(users::is_active.eq(true))
+        .filter(users::email.eq(&logmein.email))
         .load(&*conn)
         .expect(&err_msg);
 
-    match user_list.len() {
+    match user_rs.len() {
         1 => {
-            let user_auth = user_list[0].to_auth();
+            let user_auth = user_rs[0].0.to_auth();
             if let Err(err) = auth::save_auth_token(conn, &user_auth) {
                 let resp_data = json!({
                     "status": "error",
@@ -121,14 +143,15 @@ pub fn login_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIRespon
             }
             ok().data(json!({
                 "auth": user_auth,
-                "is_active": user_list[0].is_active
+                "is_active": user_rs[0].0.is_active,
+                "role": user_rs[0].1.name
             }))
         },
         _ => {
             let resp_data = json!({
                 "status": "error",
                 "detail": format!("Wrong records count found ({}) for email={}",
-                                  user_list.len(), logmein.email)
+                                  user_rs.len(), logmein.email)
             });
             bad_request().data(resp_data)
         }
@@ -175,12 +198,19 @@ pub fn signup_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIRespo
             }
         },
         Ok(_) => {
-            // TODO: select all, then check count (must be 1)
-            // TODO: remove the panic -_-
-            let user: User = users
-                .filter(email.eq(&new_user.email))
+            let user: User = users::table
+                .filter(users::email.eq(&new_user.email))
                 .first(&*conn)
-                .unwrap_or_else(|_| panic!("error getting user with email {}", new_user.email));
+                .expect(&format!(
+                    "error getting user with email {}",
+                    new_user.email));
+
+            let role_data = RoleNew {
+                name: models::ROLE_USER.to_owned(),
+                user: Some(user.id)
+            };
+            db::add_role(&conn, role_data);
+
             let user_auth = user.to_auth();
             if let Err(err) = auth::save_auth_token(conn, &user_auth) {
                 let resp_data = json!({
@@ -192,7 +222,8 @@ pub fn signup_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIRespo
             }
             let resp_data = json!({
                 "auth": user_auth,
-                "is_active": user.is_active
+                "is_active": user.is_active,
+                "role": models::ROLE_USER
             });
             created().data(resp_data)
         }

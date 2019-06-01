@@ -5,11 +5,13 @@ use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
 use diesel::prelude::*;
 use diesel::sqlite::SqliteConnection;
 
+use crate::schema::roles;
+
 use rocket::http::Status;
 use rocket::request::{self, FromRequest};
 use rocket::{Outcome, Request, State};
 
-use crate::models::User;
+use crate::models::{Role, RoleNew, User};
 
 // This boilerplate here basically does two things:
 // - using r2d2 crate, it creates a pool of DB connections
@@ -52,12 +54,38 @@ pub fn update_user(conn: &SqliteConnection, user: User) {
     // foo.save_changes(&conn) is equivalent to
     // update(&foo).set(&foo).get_result(&conn).
     // On other backends, two queries will be executed.
+    // source: http://docs.diesel.rs/diesel/query_dsl/trait.SaveChangesDsl.html#method.save_changes
 
     let update_result : Result<User, diesel::result::Error> = user.save_changes(conn);
     assert_ne!(Err(diesel::NotFound), update_result);
     if let Err(res) = update_result {
-        eprintln!("Error in record update: {:?}", res);
+        eprintln!("Error in user update: {:?}", res);
+    }
+}
+
+pub fn update_role(conn: &SqliteConnection, role: Role) {
+    let role_insert_res : Result<Role, diesel::result::Error> =
+        role.save_changes(conn);
+    if let Err(res) = role_insert_res {
+        eprintln!("Error in role update: {:?}", res);
+    }
+}
+
+pub fn get_role(conn: &SqliteConnection, user_id: i32) -> Role {
+    roles::table
+        .filter(roles::user.eq(user_id))
+        .first(conn)
+        .expect("Failed to retrieve role")
+}
+
+pub fn add_role(conn: &SqliteConnection, role_data: RoleNew) {
+    if let Err(err) = diesel::insert_into(roles::table)
+         .values(&role_data)
+        .execute(conn)
+    {
+        eprintln!("Role insert failed: {}", err);
     }
 }
 
 // TODO: centralize in this module all queries
+// maybe inside impl User {...}
