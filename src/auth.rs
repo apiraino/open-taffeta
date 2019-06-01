@@ -3,6 +3,7 @@ use rocket::request::{self, FromRequest, Request};
 use rocket::http::Status;
 use diesel::prelude::*;
 use diesel::result::DatabaseErrorKind;
+use diesel::result::Error::DatabaseError;
 
 extern crate crypto_hash;
 use crypto_hash::{Algorithm, hex_digest};
@@ -126,25 +127,8 @@ fn is_valid_token(auth: &AuthQ) -> bool {
 
 pub fn save_auth_token(conn: Conn, auth: &Auth) -> Result<(), &str> {
 
-    // match diesel::insert_into(userauth).values(auth).execute(&*conn) {
-    //     Err(err) => {
-    //         if let diesel::result::Error::DatabaseError(
-    //             DatabaseErrorKind::UniqueViolation,
-    //             _,
-    //         ) = err
-    //         {
-    //             eprintln!("auth:save_auth_token Error saving token (Uniqueviolation)");
-    //         } else {
-    //             eprintln!("auth:save_auth_token Error saving token (other error...)");
-    //         }
-    //     },
-    //     Ok(_) => {
-    //         eprintln!("auth:save_auth_token: Token saved successfully");
-    //     }
-    // };
-
     let insert_res = diesel::insert_into(userauth::table).values(auth).execute(&*conn);
-    if let Err(diesel::result::Error::DatabaseError(DatabaseErrorKind::UniqueViolation,_,)) = insert_res {
+    if let Err(DatabaseError(DatabaseErrorKind::UniqueViolation,_,)) = insert_res {
         eprintln!("auth:save_auth_token Error saving token (Uniqueviolation)");
         return Err("auth:save_auth_token Error saving token (Uniqueviolation)");
     }
@@ -159,10 +143,8 @@ pub fn save_auth_token(conn: Conn, auth: &Auth) -> Result<(), &str> {
             "error getting token count for user id {}",
             auth.user_id
         ));
-    eprintln!(">>> For user id {} found {} tokens", auth.user_id, auth_tokens.len());
-
+    // eprintln!("For user id {} found {} tokens", auth.user_id, auth_tokens.len());
     trim_tokens(conn, auth.user_id, auth_tokens)?;
-
     Ok(())
 }
 
