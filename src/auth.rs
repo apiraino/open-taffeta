@@ -115,13 +115,12 @@ fn extract_auth_from_request(request: &Request, conn: Conn) -> Option<Auth> {
 fn is_valid_token(auth: &AuthQ) -> bool {
     let now = get_now!();
     if now <= auth.exp {
-        eprintln!(">>> token still valid: {} >= {} ({})", auth.exp, now,
-                  (now <= auth.exp));
+        // eprintln!("Token still valid: {} >= {} ({})", auth.exp, now,
+        //           (now <= auth.exp));
         return true;
-    } else {
-        eprintln!(">>> Token has expired: {} >= {} ({})", auth.exp, now,
-                  (now <= auth.exp));
     }
+    // eprintln!("Token has expired: {} >= {} ({})", auth.exp, now,
+    //           (now <= auth.exp));
     false
 }
 

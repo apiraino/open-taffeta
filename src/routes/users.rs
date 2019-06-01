@@ -31,7 +31,7 @@ pub struct UserLoginSignup {
     email: String
 }
 
-pub fn validate_pwd_strength(pwd: &str) -> Result<(), ValidationError> {
+fn validate_pwd_strength(pwd: &str) -> Result<(), ValidationError> {
     if pwd == "123456" {
         // Constructor with `code` param
         // ValidationError::new("password complexity");
