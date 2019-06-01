@@ -78,13 +78,15 @@ pub fn get_role(conn: &SqliteConnection, user_id: i32) -> Role {
         .expect("Failed to retrieve role")
 }
 
-pub fn add_role(conn: &SqliteConnection, role_data: RoleNew) {
+pub fn add_role(conn: &SqliteConnection, role_data: RoleNew) -> Option<Role> {
     if let Err(err) = diesel::insert_into(roles::table)
          .values(&role_data)
         .execute(conn)
     {
         eprintln!("Role insert failed: {}", err);
+        return None;
     }
+    Some(get_role(conn, role_data.user.unwrap()))
 }
 
 // TODO: centralize in this module all queries

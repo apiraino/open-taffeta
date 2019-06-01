@@ -19,12 +19,10 @@ pub struct ResponseUserDetail {
     pub user: UserBaseResponse
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct ResponseLoginSignup {
     pub auth: Auth,
-    // TODO: maybe return a UserBaseResponse?
-    pub is_active: bool,
-    pub role: String
+    pub user: UserBaseResponse
 }
 
 #[derive(Deserialize, Debug)]

@@ -17,7 +17,7 @@ use validator_derive::Validate;
 use serde_derive::{Serialize, Deserialize};
 use crate::auth::{Auth, self as auth};
 use crate::crypto;
-use crate::serializers::users::UserBaseResponse;
+use crate::serializers::users::{UserBaseResponse, ResponseLoginSignup};
 
 #[derive(Serialize, Deserialize, Validate, Debug, Insertable)]
 #[table_name = "users"]
@@ -49,12 +49,12 @@ fn validate_pwd_strength(pwd: &str) -> Result<(), ValidationError> {
     Ok(())
 }
 
-fn attach_role_to_user(u: User, r: Role) -> UserBaseResponse {
+fn attach_role_to_user(u: &User, r: &Role) -> UserBaseResponse {
     UserBaseResponse {
         id: u.id,
-        email: u.email,
+        email: String::from(&u.email),
         is_active: u.is_active,
-        role: r.name
+        role: String::from(&r.name)
     }
 }
 
@@ -78,7 +78,7 @@ pub fn get_users(conn: db::Conn, _auth: Auth, active: Option<bool>) -> APIRespon
 
     let payload : Vec<UserBaseResponse> = users_rs
         .into_iter()
-        .map(|(user, role)| attach_role_to_user(user,role) )
+        .map(|(user, role)| attach_role_to_user(&user, &role) )
         .collect();
     ok().data( json!({ "users": payload }) )
 }
@@ -106,7 +106,7 @@ pub fn get_user(conn: db::Conn, _auth: Auth, user_id: i32) -> APIResponse {
             bad_request().data(resp_data)
         }
         Ok((user, role)) =>  {
-            ok().data(json!({"user": attach_role_to_user(user,role)}))
+            ok().data(json!({"user": attach_role_to_user(&user, &role)}))
         }
     }
 }
@@ -133,6 +133,8 @@ pub fn login_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIRespon
     match user_rs.len() {
         1 => {
             let user_auth = user_rs[0].0.to_auth();
+            let user = &user_rs[0].0;
+            let user_role = &user_rs[0].1;
             if let Err(err) = auth::save_auth_token(conn, &user_auth) {
                 let resp_data = json!({
                     "status": "error",
@@ -141,11 +143,12 @@ pub fn login_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIRespon
                 });
                 return bad_request().data(resp_data);
             }
-            ok().data(json!({
-                "auth": user_auth,
-                "is_active": user_rs[0].0.is_active,
-                "role": user_rs[0].1.name
-            }))
+            let user_data = attach_role_to_user(&user, &user_role);
+            let resp_data = ResponseLoginSignup {
+                auth: user_auth,
+                user: user_data
+            };
+            ok().data(json!(resp_data))
         },
         _ => {
             let resp_data = json!({
@@ -209,23 +212,27 @@ pub fn signup_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIRespo
                 name: models::ROLE_USER.to_owned(),
                 user: Some(user.id)
             };
-            db::add_role(&conn, role_data);
+            let user_role = db::add_role(&conn, role_data)
+                .expect(
+                    &format!("Could not add/retrive role for user {}", user.id)
+                );
 
             let user_auth = user.to_auth();
             if let Err(err) = auth::save_auth_token(conn, &user_auth) {
                 let resp_data = json!({
                     "status": "error",
-                    "detail": format!("Failed to save new auth token for email {}: {}",
-                                      user.email, err)
+                    "detail": format!(
+                        "Failed to save new auth token for email {}: {}",
+                        user.email, err)
                 });
                 return bad_request().data(resp_data);
             }
-            let resp_data = json!({
-                "auth": user_auth,
-                "is_active": user.is_active,
-                "role": models::ROLE_USER
-            });
-            created().data(resp_data)
+            let user_data = attach_role_to_user(&user, &user_role);
+            let resp_data = ResponseLoginSignup {
+                auth: user_auth,
+                user: user_data
+            };
+            created().data(json!(resp_data))
         }
     }
 }
