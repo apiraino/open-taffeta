@@ -14,7 +14,7 @@ use serde_json::Value;
 // use serde_derive::{Deserialize};
 // use open_taffeta_lib::models::{UserAuth, Door, User};
 
-use open_taffeta_lib::serializers::users::{ResponseUserDetail, ResponseLoginSignup};
+use open_taffeta_lib::serializers::users::{ResponseUserDetail, ResponseLoginSignup, ResponseError};
 use diesel::sqlite::SqliteConnection;
 
 pub mod dbstate;
@@ -27,7 +27,12 @@ pub fn api_base_url() -> Url {
     Url::parse(&server_base_url).unwrap()
 }
 
-pub fn signup_user(conn: &SqliteConnection, email: &str, is_active: bool) -> (ResponseUserDetail, String, String) {
+type Password = String;
+type Token = String;
+
+pub fn signup_user(conn: &SqliteConnection, email: &str, is_active: bool) ->
+    (ResponseUserDetail, Password, Token)
+{
     let client = Client::new();
     let api_base_uri = api_base_url();
     let password = open_taffeta_lib::config::generate_password();
@@ -41,15 +46,16 @@ pub fn signup_user(conn: &SqliteConnection, email: &str, is_active: bool) -> (Re
         .send()
         .unwrap();
     assert_eq!(response.status(), StatusCode::CREATED);
-    let resp_data : ResponseLoginSignup = response.json().expect("Error opening signup response");
+    let resp_data : ResponseLoginSignup = response.json()
+        .expect("Error opening signup response");
     let token = resp_data.auth.token;
 
-    // also activate the user
+    // activate user
     if is_active {
         let user = open_taffeta_lib::models::User {
             id: resp_data.auth.user_id,
             password: password,
-            email: email.to_string(),
+            email: email.to_owned(),
             is_active: true
         };
         open_taffeta_lib::db::update_user(&conn, user);
@@ -61,12 +67,28 @@ pub fn signup_user(conn: &SqliteConnection, email: &str, is_active: bool) -> (Re
         .get(api_base_uri.join(&q).unwrap())
         .header(AUTHORIZATION, HeaderValue::from_str(token.as_str()).unwrap())
         .send()
-        .unwrap();
-    assert_eq!(response.status(), StatusCode::OK);
-    let resp_data : ResponseUserDetail = response.json().expect("Error opening user detail response");
-
+        .expect(&format!("Failed to get user with id={}", resp_data.auth.user_id));
+    // eprintln!("Got response: {}", response.status());
+    // assert_eq!(response.status(), StatusCode::OK);
+    // TODO: here improve the return value
+    if response.status() != StatusCode::OK {
+        let err_data : ResponseError = response
+            .json()
+            .expect("Error opening error response");
+        eprintln!("Error {} in getting user with id={}: {:?}",
+                  response.status(),
+                  resp_data.auth.user_id,
+                  err_data.detail);
+    }
+    let resp_data : ResponseUserDetail = response.json()
+        .expect("Error opening user detail response");
     (resp_data, user_data.get("password").unwrap().to_string(), token)
 }
+
+// enum OkResponse {
+//     ResponseUserDetail,
+//     ResponseError
+// }
 
 pub fn get_user_detail(client: &Client, user_id: i32, auth_token: String, expected_status_code: StatusCode) -> Option<ResponseUserDetail> {
     let api_base_uri = api_base_url();
@@ -74,10 +96,22 @@ pub fn get_user_detail(client: &Client, user_id: i32, auth_token: String, expect
         .get(api_base_uri.join(&format!("/users/{}", user_id)).unwrap())
         .header(AUTHORIZATION, HeaderValue::from_str(auth_token.as_str()).unwrap())
         .send()
-        .unwrap();
-    assert_eq!(response.status(), expected_status_code);
+        .expect("Failed request: user detail");
+    if response.status() != expected_status_code {
+        if response.status() != StatusCode::OK {
+            let r : ResponseError = response.json()
+                .expect("Error opening user detail response");
+            let err_msg = format!(
+                "Error in get user detail: expected {}, got {}: {:?}",
+                expected_status_code, response.status(),
+                r.detail
+            );
+            panic!(err_msg);
+        }
+    }
     if response.status() == StatusCode::OK {
-        let r : ResponseUserDetail = response.json().expect("Error opening user detail response");
+        let r : ResponseUserDetail = response.json()
+            .expect("Error opening user detail response");
         return Some(r);
     }
     None

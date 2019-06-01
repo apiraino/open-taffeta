@@ -7,11 +7,12 @@ use crate::common::dbstate::diesel::prelude::*;
 
 use std::env;
 
-use open_taffeta_lib::models::User;
+use open_taffeta_lib::models::{RoleNew, User};
 use open_taffeta_lib::auth::Auth;
 use open_taffeta_lib::schema::users;
 use open_taffeta_lib::schema::userauth;
 use open_taffeta_lib::schema::doors;
+use open_taffeta_lib::schema::roles;
 
 pub struct DbState {
     pub conn: SqliteConnection,
@@ -48,6 +49,12 @@ impl DbState {
                 "error getting user with email {}",
                 test_user.email
             ));
+
+        let role_data = RoleNew {
+            name: open_taffeta_lib::models::ROLE_USER.to_owned(),
+            user: Some(user.id)
+        };
+        open_taffeta_lib::db::add_role(&self.conn, role_data);
 
         (user, test_password)
     }
@@ -92,6 +99,8 @@ impl DbState {
             .expect("Cannot delete doors");
         diesel::delete(userauth::table).execute(&self.conn)
             .expect("Cannot delete userauth");
+        diesel::delete(roles::table).execute(&self.conn)
+            .expect("Cannot delete roles");
     }
 }
 

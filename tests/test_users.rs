@@ -10,7 +10,7 @@ use reqwest::{Client, StatusCode};
 mod common;
 
 use crate::common::dbstate::DbState;
-use open_taffeta_lib::serializers::users::{ResponseUserDetail, ResponseListUser, ResponseLoginSignup, ResponseSignupError};
+use open_taffeta_lib::serializers::users::{ResponseUserDetail, ResponseListUser, ResponseLoginSignup, ResponseError};
 
 // TODO: have a look here
 // https://bitbucket.org/dorianpula/rookeries/src/master/tests/test_site_management.rs
@@ -43,6 +43,7 @@ fn test_user_signup() {
     let token = resp_data.auth.token;
     assert_eq!(resp_data.auth.user_id, user_id);
     assert_eq!(resp_data.is_active, false);
+    assert_eq!(resp_data.role, "user");
 
     // should count 1 user
     let mut response = client
@@ -54,6 +55,7 @@ fn test_user_signup() {
     let resp_data : ResponseListUser = response.json().unwrap();
     assert_eq!(resp_data.users.len(), 1);
     assert_eq!(resp_data.users[0].email, "hey@email.com");
+    assert_eq!(resp_data.users[0].role, "user");
 }
 
 #[test]
@@ -99,7 +101,7 @@ fn test_user_already_signed_up() {
         .send()
         .unwrap();
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
-    let resp_data: ResponseSignupError = response.json().unwrap();
+    let resp_data: ResponseError = response.json().expect("Error reading error response");
     assert_eq!(resp_data.detail.contains("record already exists"), true);
 }
 
@@ -163,7 +165,8 @@ fn test_user_list() {
         .send()
         .unwrap();
     assert_eq!(response.status(), StatusCode::OK);
-    let resp_data: ResponseListUser = response.json().unwrap();
+    let resp_data: ResponseListUser = response.json()
+        .expect("Could not deserialize user list");
     assert_eq!(resp_data.users.len(), 2);
 
     // query only active users
@@ -173,7 +176,8 @@ fn test_user_list() {
         .send()
         .unwrap();
     assert_eq!(response.status(), StatusCode::OK);
-    let resp_data: ResponseListUser = response.json().unwrap();
+    let resp_data: ResponseListUser = response.json()
+        .expect("Could not deserialize user list");
     assert_eq!(resp_data.users.len(), 1);
     assert_eq!(resp_data.users[0].email, "josh@domain.com");
 }
@@ -191,9 +195,8 @@ fn test_user_login() {
         "password": pass,
         "email": user_data.user.email
     });
-    let url = &format!("/login");
     let mut response = client
-        .post(api_base_uri.join(url).unwrap())
+        .post(api_base_uri.join("login").unwrap())
         .json(&login_data)
         .send()
         .expect("Login failed");
@@ -201,6 +204,7 @@ fn test_user_login() {
     let resp_data: ResponseLoginSignup = response.json().unwrap();
     assert_eq!(resp_data.auth.user_id, user_id);
     assert_eq!(resp_data.is_active, true);
+    assert_eq!(resp_data.role, "user");
 }
 
 #[test]
@@ -236,18 +240,20 @@ fn test_user_expire_auth_token() {
         (chrono::Utc::now() + chrono::Duration::hours(1) - chrono::Duration::seconds(1) )
             .timestamp(), 0);
 
-    let auth = state.create_auth(user.id, &user.email, expiry_date_far_expired).unwrap();
+    let mut auth = state.create_auth(user.id, &user.email, expiry_date_far_expired)
+        .expect("Could not create auth token");
     common::get_user_detail(&client, user.id, auth.token, StatusCode::UNAUTHORIZED);
-    let auth = state.create_auth(user.id, &user.email, expiry_date_close).unwrap();
+    auth = state.create_auth(user.id, &user.email, expiry_date_close)
+        .expect("Could not create auth token");
     common::get_user_detail(&client, user.id, auth.token, StatusCode::OK);
-    let auth = state.create_auth(user.id, &user.email, expiry_date_just_expired).unwrap();
+    auth = state.create_auth(user.id, &user.email, expiry_date_just_expired)
+        .expect("Counld not create auth token");
     common::get_user_detail(&client, user.id, auth.token, StatusCode::UNAUTHORIZED);
-}
+ }
 
 #[test]
 fn test_user_login_trim_expired_auth_token() {
     let state = DbState::new();
-    // let (user, password) = state.create_user("user@domain.com", true);
     let client = Client::new();
     let (user_data, password, _) = common::signup_user(&state.conn, "josh@domain.com", true);
     let user_id = user_data.user.id;
