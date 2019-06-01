@@ -41,9 +41,9 @@ fn test_user_signup() {
     let resp_data: ResponseLoginSignup = response.json().expect("Error unwrapping signup response");
     let user_id = resp_data.auth.user_id;
     let token = resp_data.auth.token;
-    assert_eq!(resp_data.auth.user_id, user_id);
-    assert_eq!(resp_data.is_active, false);
-    assert_eq!(resp_data.role, "user");
+    assert_eq!(resp_data.user.id, user_id);
+    assert_eq!(resp_data.user.is_active, false);
+    assert_eq!(resp_data.user.role, "user");
 
     // should count 1 user
     let mut response = client
@@ -202,9 +202,9 @@ fn test_user_login() {
         .expect("Login failed");
     assert_eq!(response.status(), StatusCode::OK);
     let resp_data: ResponseLoginSignup = response.json().unwrap();
-    assert_eq!(resp_data.auth.user_id, user_id);
-    assert_eq!(resp_data.is_active, true);
-    assert_eq!(resp_data.role, "user");
+    assert_eq!(resp_data.user.id, user_id);
+    assert_eq!(resp_data.user.is_active, true);
+    assert_eq!(resp_data.user.role, "user");
 }
 
 #[test]
