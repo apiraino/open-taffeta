@@ -7,7 +7,7 @@ use validator::Validate;
 use validator_derive::Validate;
 use serde_derive::{Serialize, Deserialize};
 use reqwest::{Url, Client};
-use crate::auth::Auth;
+use crate::auth::token::Auth;
 use crate::db;
 use crate::models::Door;
 use crate::schema::doors;

@@ -15,9 +15,10 @@ use rocket_contrib::json::Json;
 use validator::{Validate, ValidationError};
 use validator_derive::Validate;
 use serde_derive::{Serialize, Deserialize};
-use crate::auth::{Auth, self as auth};
+use crate::auth::token::{Auth, self as auth};
 use crate::crypto;
-use crate::serializers::users::{UserBaseResponse, ResponseLoginSignup};
+use crate::utils;
+use crate::serializers::user::{UserBaseResponse, ResponseLoginSignup};
 
 #[derive(Serialize, Deserialize, Validate, Debug, Insertable)]
 #[table_name = "users"]
@@ -49,17 +50,8 @@ fn validate_pwd_strength(pwd: &str) -> Result<(), ValidationError> {
     Ok(())
 }
 
-fn attach_role_to_user(u: &User, r: &Role) -> UserBaseResponse {
-    UserBaseResponse {
-        id: u.id,
-        email: String::from(&u.email),
-        is_active: u.is_active,
-        role: String::from(&r.name)
-    }
-}
-
 #[get("/users?<active>", format = "application/json")]
-pub fn get_users(conn: db::Conn, _auth: Auth, active: Option<bool>) -> APIResponse {
+pub fn get_users(conn: db::Conn, _auth: Auth, admin: User, active: Option<bool>) -> APIResponse {
     let users_rs : Vec<(User, Role)> = match active {
         Some(_) => {
             users::table
@@ -78,7 +70,7 @@ pub fn get_users(conn: db::Conn, _auth: Auth, active: Option<bool>) -> APIRespon
 
     let payload : Vec<UserBaseResponse> = users_rs
         .into_iter()
-        .map(|(user, role)| attach_role_to_user(&user, &role) )
+        .map(|(user, role)| utils::attach_role_to_user(&user, &role) )
         .collect();
     ok().data( json!({ "users": payload }) )
 }
@@ -106,7 +98,7 @@ pub fn get_user(conn: db::Conn, _auth: Auth, user_id: i32) -> APIResponse {
             bad_request().data(resp_data)
         }
         Ok((user, role)) =>  {
-            ok().data(json!({"user": attach_role_to_user(&user, &role)}))
+            ok().data(json!({"user": utils::attach_role_to_user(&user, &role)}))
         }
     }
 }
@@ -143,7 +135,7 @@ pub fn login_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIRespon
                 });
                 return bad_request().data(resp_data);
             }
-            let user_data = attach_role_to_user(&user, &user_role);
+            let user_data = utils::attach_role_to_user(&user, &user_role);
             let resp_data = ResponseLoginSignup {
                 auth: user_auth,
                 user: user_data
@@ -227,7 +219,7 @@ pub fn signup_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIRespo
                 });
                 return bad_request().data(resp_data);
             }
-            let user_data = attach_role_to_user(&user, &user_role);
+            let user_data = utils::attach_role_to_user(&user, &user_role);
             let resp_data = ResponseLoginSignup {
                 auth: user_auth,
                 user: user_data

@@ -12,6 +12,7 @@
 #[macro_use]
 pub mod config;
 pub mod crypto;
+pub mod utils;
 
 pub mod db;
 // TODO: pub here is wrong, used only for tests

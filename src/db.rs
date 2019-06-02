@@ -5,13 +5,15 @@ use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
 use diesel::prelude::*;
 use diesel::sqlite::SqliteConnection;
 
-use crate::schema::roles;
+use crate::schema::{roles, users};
 
 use rocket::http::Status;
 use rocket::request::{self, FromRequest};
 use rocket::{Outcome, Request, State};
 
+use crate::utils;
 use crate::models::{Role, RoleNew, User};
+use crate::serializers::user::UserBaseResponse;
 
 // This boilerplate here basically does two things:
 // - using r2d2 crate, it creates a pool of DB connections
@@ -47,6 +49,68 @@ impl<'a, 'r> FromRequest<'a, 'r> for Conn {
     }
 }
 
+pub fn get_user(conn: &SqliteConnection, user_id: i32)
+                        -> Result<User, String>
+{
+    let user_rs : Result<User, diesel::result::Error> = users::table
+        .filter(users::id.eq(user_id))
+        .get_result(&*conn);
+
+    match user_rs {
+        Ok(records) => {
+            return Ok(records);
+        },
+        Err(err) => {
+            let err_msg = format!("user {} retrieval failed: {}",
+                                  user_id, err);
+            return Err(err_msg);
+        }
+    };
+}
+
+pub fn get_user_list(conn: &SqliteConnection)
+                -> Result<Vec<User>, String>
+{
+    let query_result : Result<Vec<User>, diesel::result::Error> =
+        users::table.load(&*conn);
+
+    match query_result {
+        Err(err) => {
+            let err_msg = format!("error executing query: {}", err);
+            return Err(err_msg);
+        }
+        Ok(vec_user) => { Ok(vec_user) }
+    }
+
+    // Ok(query_result)
+}
+pub fn get_user_profile(conn: &SqliteConnection, user_id: i32)
+                -> Result<UserBaseResponse, String>
+{
+    let query_result : Result<(User, Role), diesel::result::Error> = users::table
+        .inner_join(roles::table)
+        .filter(users::id.eq(user_id))
+        .get_result(&*conn);
+
+    match query_result {
+        Err(diesel::NotFound) => {
+            let err_msg = format!("error retrieving active user id {}", user_id);
+            return Err(err_msg);
+        },
+        Err(err) => {
+            let err_msg = format!("error executing query: {}", err);
+            return Err(err_msg);
+        }
+        Ok((user, role)) =>  {
+            // if let Ok(user) = utils::attach_role_to_user(&user, &role) {
+            //     // ok
+            // }
+            let u = utils::attach_role_to_user(&user, &role);
+            Ok(u)
+        }
+    }
+}
+
 pub fn update_user(conn: &SqliteConnection, user: User) {
 
     // SupportsReturningClause only available on Postgres
@@ -64,9 +128,9 @@ pub fn update_user(conn: &SqliteConnection, user: User) {
 }
 
 pub fn update_role(conn: &SqliteConnection, role: Role) {
-    let role_insert_res : Result<Role, diesel::result::Error> =
+    let role_upd_res : Result<Role, diesel::result::Error> =
         role.save_changes(conn);
-    if let Err(res) = role_insert_res {
+    if let Err(res) = role_upd_res {
         eprintln!("Error in role update: {:?}", res);
     }
 }

@@ -6,7 +6,7 @@
 // ... there are many more ...
 
 use crate::schema::{roles, users};
-use crate::auth::Auth;
+use crate::auth::token::Auth;
 use serde_derive::{Serialize, Deserialize};
 use diesel::dsl::Select;
 
@@ -74,7 +74,7 @@ impl User {
     }
 
     // TODO: make it work
-    pub fn no_pwd() -> All {
+    pub fn no_pwd_fld(&self) -> All {
         use crate::diesel::QueryDsl;
         users::table.select(ALL_COLUMNS)
     }
