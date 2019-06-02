@@ -51,7 +51,10 @@ pub fn runner(_env: Environment) -> Result<rocket::Rocket, String> {
                 routes::doors::get_doors,
                 routes::doors::get_door,
                 routes::doors::delete_door,
-                routes::doors::buzz_door
+                routes::doors::buzz_door,
+                routes::admin::admin_panel,
+                routes::admin::admin_panel_user,
+                routes::admin::admin_panel_redirect
             ],
         ).manage(pool)
         .register(catchers![

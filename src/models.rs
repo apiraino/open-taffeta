@@ -90,4 +90,15 @@ impl User {
     //         .load(conn)
     // }
 
+    pub fn is_allowed(&self, req: &rocket::Request, role: &str) -> bool {
+        let route = req.route()
+            .expect("Could not unwrap route from request");
+        if role == ROLE_USER {
+            if route.uri.path() == "/users" {
+                return false;
+            }
+        }
+        true
+    }
+
 }
