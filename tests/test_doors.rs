@@ -1,20 +1,15 @@
 use std::{thread, time};
-
 extern crate open_taffeta_lib;
-
 extern crate reqwest;
-
 #[macro_use]
 extern crate serde_json;
 
 use reqwest::header::{HeaderValue, AUTHORIZATION};
 use reqwest::{Client, StatusCode};
-
-mod common;
-
+use open_taffeta_lib::serializers::doors::*;
+use open_taffeta_lib::models::*;
 use crate::common::dbstate::DbState;
-
-use open_taffeta_lib::serializers::doors::{ResponseDoorCreated};
+mod common;
 
 // TODO: have a look here
 // https://bitbucket.org/dorianpula/rookeries/src/master/tests/test_site_management.rs
@@ -43,7 +38,7 @@ fn test_door_bad_auth() {
 fn test_door_create() {
     let state = DbState::new();
     let api_base_uri = common::api_base_url();
-    let (_, _, token) = common::signup_user(&state.conn, "josh@domain.com", true);
+    let (_, _, token) = common::signup_user(&state.conn, "josh@domain.com", true, ROLE_USER);
     let client = Client::new();
 
     // check for 0 doors
@@ -76,7 +71,7 @@ fn test_door_create() {
 fn test_door_delete() {
     let state = DbState::new();
     let api_base_uri = common::api_base_url();
-    let (_, _, token) = common::signup_user(&state.conn, "josh@domain.com", true);
+    let (_, _, token) = common::signup_user(&state.conn, "josh@domain.com", true, ROLE_USER);
     let client = Client::new();
     // check for 0 doors
     state.assert_empty_doors();
@@ -111,7 +106,7 @@ fn test_door_delete() {
 fn test_door_buzz() {
     let state = DbState::new();
     let api_base_uri = common::api_base_url();
-    let (_, _, token) = common::signup_user(&state.conn, "josh@domain.com", true);
+    let (_, _, token) = common::signup_user(&state.conn, "josh@domain.com", true, ROLE_USER);
     let client = Client::new();
 
     let payload = json!({

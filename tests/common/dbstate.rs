@@ -8,7 +8,7 @@ use crate::common::dbstate::diesel::prelude::*;
 use std::env;
 
 use open_taffeta_lib::models::{RoleNew, User};
-use open_taffeta_lib::auth::Auth;
+use open_taffeta_lib::auth::token::Auth;
 use open_taffeta_lib::schema::users;
 use open_taffeta_lib::schema::userauth;
 use open_taffeta_lib::schema::doors;
@@ -27,8 +27,7 @@ impl DbState {
         DbState { conn: SqliteConnection::establish(&database_url).unwrap() }
     }
 
-    // warning: "email" param colliding with fields in "open_taffeta_lib::schema::users::*" (duh)
-    pub fn create_user(&self, email: &str, is_active: bool) -> (User, String) {
+    pub fn create_user(&self, email: &str, is_active: bool, role: &str) -> User {
         let mut test_user = User::default();
         test_user.email = String::from(email);
         let test_password = open_taffeta_lib::config::generate_password();
@@ -51,12 +50,11 @@ impl DbState {
             ));
 
         let role_data = RoleNew {
-            name: open_taffeta_lib::models::ROLE_USER.to_owned(),
+            name: role.to_owned(),
             user: Some(user.id)
         };
         open_taffeta_lib::db::add_role(&self.conn, role_data);
-
-        (user, test_password)
+        user
     }
 
     pub fn create_auth(&self, user_id: i32, email: &str, expiry_date: chrono::NaiveDateTime) -> Option<Auth> {

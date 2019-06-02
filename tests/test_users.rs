@@ -10,7 +10,8 @@ use reqwest::{Client, StatusCode};
 mod common;
 
 use crate::common::dbstate::DbState;
-use open_taffeta_lib::serializers::users::{ResponseUserDetail, ResponseListUser, ResponseLoginSignup, ResponseError};
+use open_taffeta_lib::serializers::user::*;
+use open_taffeta_lib::models::*;
 
 // TODO: have a look here
 // https://bitbucket.org/dorianpula/rookeries/src/master/tests/test_site_management.rs
@@ -18,7 +19,8 @@ use open_taffeta_lib::serializers::users::{ResponseUserDetail, ResponseListUser,
 #[test]
 fn test_db() {
     let state = DbState::new();
-    state.create_user("josh@domain.com", true);
+    state.create_user("josh@domain.com", true,
+                      open_taffeta_lib::models::ROLE_USER);
 }
 
 #[test]
@@ -39,23 +41,8 @@ fn test_user_signup() {
         .unwrap();
     assert_eq!(response.status(), StatusCode::CREATED);
     let resp_data: ResponseLoginSignup = response.json().expect("Error unwrapping signup response");
-    let user_id = resp_data.auth.user_id;
-    let token = resp_data.auth.token;
-    assert_eq!(resp_data.user.id, user_id);
     assert_eq!(resp_data.user.is_active, false);
-    assert_eq!(resp_data.user.role, "user");
-
-    // should count 1 user
-    let mut response = client
-        .get(api_base_uri.join("/users").unwrap())
-        .header(AUTHORIZATION, HeaderValue::from_str(token.as_str()).unwrap())
-        .send()
-        .unwrap();
-    assert_eq!(response.status(), StatusCode::OK);
-    let resp_data : ResponseListUser = response.json().unwrap();
-    assert_eq!(resp_data.users.len(), 1);
-    assert_eq!(resp_data.users[0].email, "hey@email.com");
-    assert_eq!(resp_data.users[0].role, "user");
+    assert_eq!(resp_data.user.role, ROLE_USER);
 }
 
 #[test]
@@ -63,12 +50,12 @@ fn test_user_signup_and_activate() {
     let state = DbState::new();
     state.clean_tables();
     state.assert_empty_users();
-    // signup a user
-    let (resp_data, _, _) = common::signup_user(&state.conn, "josh@domain.com", false);
+
+    let (resp_data, _, _) = common::signup_user(&state.conn, "josh@domain.com", false, ROLE_USER);
     assert_eq!(resp_data.user.email, "josh@domain.com");
     assert_eq!(resp_data.user.is_active, false);
 
-    let (resp_data, _, _) = common::signup_user(&state.conn, "josh1@domain.com", true);
+    let (resp_data, _, _) = common::signup_user(&state.conn, "josh1@domain.com", true, ROLE_USER);
     assert_eq!(resp_data.user.email, "josh1@domain.com");
     assert_eq!(resp_data.user.is_active, true);
 }
@@ -80,11 +67,11 @@ fn test_user_already_signed_up() {
     // check for 0 users
     state.assert_empty_users();
     // signup a user
-    let (resp_data, _, _) = common::signup_user(&state.conn, "josh@domain.com", false);
+    let (resp_data, _, _) = common::signup_user(&state.conn, "josh@domain.com", false, ROLE_USER);
     assert_eq!(resp_data.user.email, "josh@domain.com");
     assert_eq!(resp_data.user.is_active, false);
 
-    let (resp_data, _, _) = common::signup_user(&state.conn, "josh1@domain.com", true);
+    let (resp_data, _, _) = common::signup_user(&state.conn, "josh1@domain.com", true, ROLE_USER);
     assert_eq!(resp_data.user.email, "josh1@domain.com");
     assert_eq!(resp_data.user.is_active, true);
 
@@ -114,7 +101,7 @@ fn test_user_detail() {
     // check for 0 users
     state.assert_empty_users();
     // signup a user
-    let (user_data, _, token) = common::signup_user(&state.conn, "josh@domain.com", true);
+    let (user_data, _, token) = common::signup_user(&state.conn, "josh@domain.com", true, ROLE_USER);
 
     // get user detail
     let q = format!("/users/{}", user_data.user.id);
@@ -130,56 +117,16 @@ fn test_user_detail() {
 
 #[test]
 fn test_user_detail_not_allowed() {
-    assert!(true, "TODO: user2 should not be allowed to access user1 details");
+    assert!(true, "user2 not be allowed to access user1 details");
 }
 
 #[test]
-fn test_user_no_allowed_to_admin_interface() {
-    // hint: use Rocket route ordering
-    assert!(true, "TODO: user is not allowed to any admin interface (such as /users)");
-}
-
-#[test]
-fn test_admin_update_allowed() {
-    assert!(true, "TODO: admin is allowed to update any user");
-}
-
-#[test]
-fn test_admin_list_allowed() {
-    assert!(true, "TODO: admin is allowed to list users");
-}
-
-#[test]
-fn test_user_list() {
+fn test_user_list_not_allowed() {
     let state = DbState::new();
     state.clean_tables();
-    state.create_user("inactive@domain.com", false);
-    let (_, _, token) = common::signup_user(&state.conn, "josh@domain.com", true);
-    let api_base_uri = common::api_base_url();
+    let (_, _, token) = common::signup_user(&state.conn, "josh@domain.com", true, ROLE_USER);
     let client = Client::new();
-
-    // query all users
-    let mut response = client
-        .get(api_base_uri.join("/users").unwrap())
-        .header(AUTHORIZATION, HeaderValue::from_str(token.as_str()).unwrap())
-        .send()
-        .unwrap();
-    assert_eq!(response.status(), StatusCode::OK);
-    let resp_data: ResponseListUser = response.json()
-        .expect("Could not deserialize user list");
-    assert_eq!(resp_data.users.len(), 2);
-
-    // query only active users
-    let mut response = client
-        .get(api_base_uri.join("/users?active=true").unwrap())
-        .header(AUTHORIZATION, HeaderValue::from_str(token.as_str()).unwrap())
-        .send()
-        .unwrap();
-    assert_eq!(response.status(), StatusCode::OK);
-    let resp_data: ResponseListUser = response.json()
-        .expect("Could not deserialize user list");
-    assert_eq!(resp_data.users.len(), 1);
-    assert_eq!(resp_data.users[0].email, "josh@domain.com");
+    common::get_user_list(&client, &token, "", StatusCode::UNAUTHORIZED);
 }
 
 #[test]
@@ -187,7 +134,7 @@ fn test_user_login() {
     let dbstate = DbState::new();
     let api_base_uri = common::api_base_url();
     let client = Client::new();
-    let (user_data, pass, _) = common::signup_user(&dbstate.conn, "josh@domain.com", true);
+    let (user_data, pass, _) = common::signup_user(&dbstate.conn, "josh@domain.com", true, ROLE_USER);
     let user_id = user_data.user.id;
 
     // login
@@ -211,7 +158,8 @@ fn test_user_login() {
 fn test_user_login_generate_auth_token() {
     let state = DbState::new();
     let client = Client::new();
-    let (user_data, password, token) = common::signup_user(&state.conn, "josh@domain.com", true);
+    let (user_data, password, token) = common::signup_user(
+        &state.conn, "josh@domain.com", true, ROLE_USER);
     let user_id = user_data.user.id;
 
     let login_data = json!({
@@ -228,7 +176,8 @@ fn test_user_login_generate_auth_token() {
 #[test]
 fn test_user_expire_auth_token() {
     let state = DbState::new();
-    let (user, _) = state.create_user("user@domain.com", false);
+    let user = state.create_user("user@domain.com", false,
+                                      open_taffeta_lib::models::ROLE_USER);
     let client = Client::new();
 
     // create a bunch of tokens
@@ -242,20 +191,21 @@ fn test_user_expire_auth_token() {
 
     let mut auth = state.create_auth(user.id, &user.email, expiry_date_far_expired)
         .expect("Could not create auth token");
-    common::get_user_detail(&client, user.id, auth.token, StatusCode::UNAUTHORIZED);
+    common::get_user_detail(&client, user.id, &auth.token, StatusCode::UNAUTHORIZED);
     auth = state.create_auth(user.id, &user.email, expiry_date_close)
         .expect("Could not create auth token");
-    common::get_user_detail(&client, user.id, auth.token, StatusCode::OK);
+    common::get_user_detail(&client, user.id, &auth.token, StatusCode::OK);
     auth = state.create_auth(user.id, &user.email, expiry_date_just_expired)
-        .expect("Counld not create auth token");
-    common::get_user_detail(&client, user.id, auth.token, StatusCode::UNAUTHORIZED);
+        .expect("Could not create auth token");
+    common::get_user_detail(&client, user.id, &auth.token, StatusCode::UNAUTHORIZED);
  }
 
 #[test]
 fn test_user_login_trim_expired_auth_token() {
     let state = DbState::new();
     let client = Client::new();
-    let (user_data, password, _) = common::signup_user(&state.conn, "josh@domain.com", true);
+    let (user_data, password, _) = common::signup_user(
+        &state.conn, "josh@domain.com", true, ROLE_USER);
     let user_id = user_data.user.id;
 
     // create an expired token
@@ -277,7 +227,8 @@ fn test_user_login_rotate_auth_token() {
     let state = DbState::new();
     state.clean_tables();
     let client = Client::new();
-    let (user_data, password, first_token) = common::signup_user(&state.conn, "josh@domain.com", true);
+    let (user_data, password, first_token) = common::signup_user(
+        &state.conn, "josh@domain.com", true, ROLE_USER);
     assert_eq!(state.count_auth_token(user_data.user.id), 1);
 
     // moar tokens generated

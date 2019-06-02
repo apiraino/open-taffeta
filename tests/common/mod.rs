@@ -11,11 +11,11 @@ use reqwest::header::{AUTHORIZATION, HeaderValue};
 // exported from Rocket 0.4 get compiler confused (?)
 // use rocket_contrib::json::JsonValue;
 use serde_json::Value;
-// use serde_derive::{Deserialize};
-// use open_taffeta_lib::models::{UserAuth, Door, User};
 
-use open_taffeta_lib::serializers::users::{ResponseUserDetail, ResponseLoginSignup, ResponseError};
 use diesel::sqlite::SqliteConnection;
+
+use open_taffeta_lib::serializers::user::*;
+use open_taffeta_lib::models::*;
 
 pub mod dbstate;
 
@@ -30,7 +30,7 @@ pub fn api_base_url() -> Url {
 type Password = String;
 type Token = String;
 
-pub fn signup_user(conn: &SqliteConnection, email: &str, is_active: bool) ->
+pub fn signup_user(conn: &SqliteConnection, email: &str, is_active: bool, role: &str) ->
     (ResponseUserDetail, Password, Token)
 {
     let client = Client::new();
@@ -44,8 +44,19 @@ pub fn signup_user(conn: &SqliteConnection, email: &str, is_active: bool) ->
         .post(api_base_uri.join("/signup").unwrap())
         .json(&user_data)
         .send()
-        .unwrap();
-    assert_eq!(response.status(), StatusCode::CREATED);
+        .expect("Could not signup user");
+
+    if response.status() != StatusCode::CREATED {
+        let r : ResponseError = response.json()
+            .expect("Error opening signup response");
+        let err_msg = format!(
+            "Error in signup: expected {}, got {}: {:?}",
+            StatusCode::CREATED, response.status(),
+            r.detail
+        );
+        panic!(err_msg);
+    }
+
     let resp_data : ResponseLoginSignup = response.json()
         .expect("Error opening signup response");
     let token = resp_data.auth.token;
@@ -61,40 +72,26 @@ pub fn signup_user(conn: &SqliteConnection, email: &str, is_active: bool) ->
         open_taffeta_lib::db::update_user(&conn, user);
     }
 
-    // get back that user (Sqlite has no RETURNING support)
-    let q = format!("/users/{}", resp_data.auth.user_id);
-    let mut response = client
-        .get(api_base_uri.join(&q).unwrap())
-        .header(AUTHORIZATION, HeaderValue::from_str(token.as_str()).unwrap())
-        .send()
-        .expect(&format!("Failed to get user with id={}", resp_data.auth.user_id));
-    // eprintln!("Got response: {}", response.status());
-    // assert_eq!(response.status(), StatusCode::OK);
-    // TODO: here improve the return value
-    if response.status() != StatusCode::OK {
-        let err_data : ResponseError = response
-            .json()
-            .expect("Error opening error response");
-        eprintln!("Error {} in getting user with id={}: {:?}",
-                  response.status(),
-                  resp_data.auth.user_id,
-                  err_data.detail);
+    if role != ROLE_USER {
+        let mut user_role = open_taffeta_lib::db::get_role(
+            &conn, resp_data.auth.user_id);
+        user_role.name = String::from(role);
+        open_taffeta_lib::db::update_role(&conn, user_role);
     }
-    let resp_data : ResponseUserDetail = response.json()
-        .expect("Error opening user detail response");
+
+    // get back that user (Sqlite has no RETURNING support)
+    let resp_data = get_user_detail(&client, resp_data.auth.user_id,
+                                    &token, StatusCode::OK)
+        .expect("no response received");
+
     (resp_data, user_data.get("password").unwrap().to_string(), token)
 }
 
-// enum OkResponse {
-//     ResponseUserDetail,
-//     ResponseError
-// }
-
-pub fn get_user_detail(client: &Client, user_id: i32, auth_token: String, expected_status_code: StatusCode) -> Option<ResponseUserDetail> {
+pub fn get_user_detail(client: &Client, user_id: i32, auth_token: &str, expected_status_code: StatusCode) -> Option<ResponseUserDetail> {
     let api_base_uri = api_base_url();
     let mut response = client
         .get(api_base_uri.join(&format!("/users/{}", user_id)).unwrap())
-        .header(AUTHORIZATION, HeaderValue::from_str(auth_token.as_str()).unwrap())
+        .header(AUTHORIZATION, HeaderValue::from_str(auth_token).unwrap())
         .send()
         .expect("Failed request: user detail");
     if response.status() != expected_status_code {
@@ -112,6 +109,44 @@ pub fn get_user_detail(client: &Client, user_id: i32, auth_token: String, expect
     if response.status() == StatusCode::OK {
         let r : ResponseUserDetail = response.json()
             .expect("Error opening user detail response");
+        return Some(r);
+    }
+    None
+}
+
+pub fn get_user_list(client: &Client, token: &str, params: &str, expected_status_code: StatusCode) -> Option<ResponseListUser> {
+    let api_base_uri = api_base_url();
+
+    let mut url = String::from("/users");
+    if params != "" {
+        url.push_str(params);
+    }
+
+    let mut response = client
+        .get(api_base_uri.join(&url.to_owned()).unwrap())
+        .header(AUTHORIZATION, HeaderValue::from_str(token).unwrap())
+        .send()
+        .expect("Failed request: user list");
+    if response.status() != expected_status_code {
+        let err_msg;
+        if response.status() != StatusCode::OK {
+            eprintln!("{:?}", response);
+            let r : ResponseError = response.json()
+                .expect("Error opening user list response");
+            err_msg = format!(
+                "Error in get user list: expected {}, got {}: {:?}",
+                expected_status_code, response.status(),
+                r.detail);
+        } else {
+            err_msg = format!(
+                "Error in get user list: expected {}, got {}",
+                expected_status_code, response.status());
+        }
+        panic!(err_msg);
+    }
+    if response.status() == StatusCode::OK {
+        let r : ResponseListUser = response.json()
+            .expect("Error opening user list response");
         return Some(r);
     }
     None
