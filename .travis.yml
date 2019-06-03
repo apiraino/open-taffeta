@@ -1,11 +1,11 @@
 language: rust
 
 rust:
-  - nightly-2018-12-08
+  - nightly-2019-05-29
 
 cache: cargo
 env:
-  - DATABASE_URL=test_app.db TEST_SERVER=https://localhost:8080 ROCKET_ENV=dev
+  - DATABASE_URL=test_app.db TEST_SERVER=https://localhost:8080 ROCKET_ENV=dev SECRET=123456
 
 before_script:
   - rustup component add rust-src
