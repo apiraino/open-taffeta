@@ -11,6 +11,5 @@ Cargo.lock
 
 *.db
 *.sh
-src/crypto.rs
 certs/
 .cargo/
