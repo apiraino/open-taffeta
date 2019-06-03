@@ -1,3 +1,4 @@
+dist: xenial
 language: rust
 
 rust:
@@ -11,7 +12,7 @@ before_script:
   - rustup component add rust-src
   - export RUST_SRC_PATH=`rustc --print sysroot`/lib/rustlib/src/rust/src
   - export RUST_TEST_THREADS=1
-  - cargo install diesel_cli --force --no-default-features --features=sqlite
+  - cargo install --force diesel_cli --no-default-features --features=sqlite
   - cargo install --force cargo-audit
   - rm -f test_app.db && diesel setup
   - cargo run &
