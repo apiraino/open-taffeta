@@ -6,12 +6,11 @@ rust:
 
 cache: cargo
 env:
-  - DATABASE_URL=test_app.db TEST_SERVER=https://localhost:8080 ROCKET_ENV=dev SECRET=123456
+  - DATABASE_URL=test_app.db TEST_SERVER=http://localhost:8080 ROCKET_ENV=dev SECRET=123456 RUST_TEST_THREADS=1
 
 before_script:
   - rustup component add rust-src
   - export RUST_SRC_PATH=`rustc --print sysroot`/lib/rustlib/src/rust/src
-  - export RUST_TEST_THREADS=1
   - cargo install --force diesel_cli --no-default-features --features=sqlite
   - cargo install --force cargo-audit
   - rm -f test_app.db && diesel setup
