@@ -14,3 +14,4 @@ Cargo.lock
 certs/
 .cargo/
 src/crypto.rs
+scripts/.*
