@@ -33,7 +33,7 @@ macro_rules! get_now {
 
 
 pub fn get_secret() -> String {
-    env::var("SECRET").expect("SECRET env var")
+    env::var("SECRET").expect("Missing SECRET env var")
 }
 
 pub fn generate_password() -> String {
