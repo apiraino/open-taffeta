@@ -78,7 +78,7 @@ crypto-hash = "0.3.3"
 [dependencies.rocket_contrib]
 version = "0.4.1"
 default-features = false
-features = ["json"]
+features = ["json", "serve", "tera_templates"]
 
 # commented out for xcompiling for Raspi1
 #[dependencies.libsqlite3-sys]
