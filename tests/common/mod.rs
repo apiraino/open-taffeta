@@ -152,7 +152,8 @@ pub fn get_user_list(client: &Client, token: &str, params: &str, expected_status
     None
 }
 
-pub fn user_login(client: &Client, login_data: &Value, expected_status_code: StatusCode) -> Option<ResponseLoginSignup> {
+pub fn user_login(client: &Client, login_data: &Value, expected_status_code: StatusCode)
+                  -> Option<ResponseLoginSignup> {
     let api_base_uri = api_base_url();
     let mut response = client
         .post(api_base_uri.join("/login").unwrap())
@@ -165,4 +166,42 @@ pub fn user_login(client: &Client, login_data: &Value, expected_status_code: Sta
         return Some(resp_data);
     }
     None
+}
+
+pub fn get_admin_page(client: &Client, token: &str, params: &str, expected_status_code: StatusCode)
+                      -> Option<String> {
+    let api_base_uri = api_base_url();
+
+    let mut url = String::from("/admin");
+    if params != "" {
+        url.push_str(params);
+    }
+
+    let mut response = client
+        .get(api_base_uri.join(&url.to_owned()).unwrap())
+        .header(AUTHORIZATION, HeaderValue::from_str(token).unwrap())
+        .send()
+        .expect("Failed request: admin page");
+    if response.status() != expected_status_code {
+        let err_msg;
+        if response.status() != StatusCode::OK {
+            eprintln!("{:?}", response);
+            let r : ResponseError = response.json()
+                .expect("Error opening admin page response");
+            err_msg = format!(
+                "Error in get admin page: expected {}, got {}: {:?}",
+                expected_status_code, response.status(),
+                r.detail);
+        } else {
+            err_msg = format!(
+                "Error in admin page: expected {}, got {}",
+                expected_status_code, response.status());
+        }
+        panic!(err_msg);
+    }
+    // if response.status() == StatusCode::OK {
+    //     // TODO: basic HTML parsing ?
+    // }
+    let r = response.text().expect("Failed to unwrap response text");
+    Some(r)
 }

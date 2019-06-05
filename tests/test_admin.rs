@@ -64,8 +64,30 @@ fn test_admin_get_user_list() {
 
 #[test]
 fn test_user_disallowed_admin_interface() {
-    // hint: use Rocket route ordering
-    assert!(true, "User not allowed to admin interface");
+    let state = DbState::new();
+    state.clean_tables();
+    state.assert_empty_users();
+    let (_, _, token_user) = common::signup_user(
+        &state.conn, "josh@domain.com", true, ROLE_USER);
+    let (_, _, token_admin) = common::signup_user(
+        &state.conn, "admin@domain.com", true, ROLE_ADMIN);
+    let client = Client::new();
+
+    let admin_page = common::get_admin_page(
+        &client, &token_user, "", StatusCode::UNAUTHORIZED)
+        .expect("Could not get admin page");
+    let regexp = "not authorized";
+    assert_eq!(admin_page.to_lowercase().contains(regexp), true,
+               "Page regexp does not match: {}: got {}",
+               regexp, admin_page);
+
+    let admin_page = common::get_admin_page(
+        &client, &token_admin, "", StatusCode::OK)
+        .expect("Could not get admin page");
+    let regexp = "user list";
+    assert_eq!(admin_page.to_lowercase().contains(regexp), true,
+               "Page regexp does not match: {}: got {}",
+               regexp, admin_page);
 }
 
 #[test]
