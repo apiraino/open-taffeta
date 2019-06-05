@@ -49,13 +49,20 @@ impl<'a, 'r> FromRequest<'a, 'r> for Conn {
     }
 }
 
-pub fn get_user(conn: &SqliteConnection, user_id: i32, only_active: Option<bool>)
+pub fn get_user(conn: &SqliteConnection, user_id: i32, only_active: bool)
                         -> Result<User, String>
 {
-    let user_rs : Result<User, diesel::result::Error> = users::table
-        .filter(users::id.eq(user_id))
-        .filter(users::is_active.eq(only_active.unwrap_or_else(|| false)))
-        .get_result(&*conn);
+    let mut user_rs : Result<User, diesel::result::Error>;
+    if only_active {
+        user_rs = users::table
+            .filter(users::id.eq(user_id))
+            .filter(users::is_active.eq(true))
+            .get_result(&*conn);
+    } else {
+        user_rs = users::table
+            .filter(users::id.eq(user_id))
+            .get_result(&*conn);
+    }
 
     match user_rs {
         Ok(records) => {
@@ -69,11 +76,21 @@ pub fn get_user(conn: &SqliteConnection, user_id: i32, only_active: Option<bool>
     };
 }
 
-pub fn get_user_list(conn: &SqliteConnection)
-                -> Result<Vec<User>, String>
+pub fn get_user_list(conn: &SqliteConnection, only_active: bool)
+                -> Result<Vec<(User, Role)>, String>
 {
-    let query_result : Result<Vec<User>, diesel::result::Error> =
-        users::table.load(&*conn);
+    let mut query_result : Result<Vec<(User, Role)>, diesel::result::Error>;
+    if only_active {
+        query_result = users::table
+            .inner_join(roles::table)
+            .filter(users::is_active.eq(true))
+            .load(&*conn);
+    }
+    else {
+        query_result = users::table
+            .inner_join(roles::table)
+            .load(&*conn);
+    }
 
     match query_result {
         Err(err) => {
@@ -82,8 +99,6 @@ pub fn get_user_list(conn: &SqliteConnection)
         }
         Ok(vec_user) => { Ok(vec_user) }
     }
-
-    // Ok(query_result)
 }
 pub fn get_user_profile(conn: &SqliteConnection, user_id: i32)
                 -> Result<UserBaseResponse, String>

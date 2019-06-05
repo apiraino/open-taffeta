@@ -51,12 +51,12 @@ fn validate_pwd_strength(pwd: &str) -> Result<(), ValidationError> {
 }
 
 #[get("/users?<active>", format = "application/json")]
-pub fn get_users(conn: db::Conn, _auth: Auth, admin: User, active: Option<bool>) -> APIResponse {
-    let users_rs : Vec<(User, Role)> = match active {
+pub fn get_users(conn: db::Conn, _auth: Auth, _admin: User, active: Option<bool>) -> APIResponse {
+    let users_rs : Vec<(User,Role)> = match active {
         Some(_) => {
             users::table
                 .inner_join(roles::table)
-                .filter(users::is_active.eq(active.unwrap_or_else(|| false)))
+                .filter(users::is_active.eq(true))
                 .load(&*conn)
                 .expect("error retrieving active users")
         },
