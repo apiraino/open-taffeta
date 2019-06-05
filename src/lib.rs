@@ -24,6 +24,7 @@ pub mod schema;
 pub mod auth;
 
 use rocket::config::Environment;
+use rocket_contrib::templates::Template;
 
 pub fn runner(_env: Environment) -> Result<rocket::Rocket, String> {
     let pool = db::init_pool();
@@ -56,7 +57,9 @@ pub fn runner(_env: Environment) -> Result<rocket::Rocket, String> {
                 routes::admin::admin_panel_user,
                 routes::admin::admin_panel_redirect
             ],
-        ).manage(pool)
+        )
+        .attach(Template::fairing())
+        .manage(pool)
         .register(catchers![
             // returns a 404 for URLs not mapped
             routes::all::not_found,
