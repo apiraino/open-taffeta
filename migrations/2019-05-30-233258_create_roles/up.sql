@@ -4,6 +4,3 @@ CREATE TABLE roles (
        user INTEGER,
        FOREIGN KEY(user) REFERENCES users(id)
 );
-
-INSERT INTO roles (name) VALUES ("user");
-INSERT INTO roles (name) VALUES ("admin");
