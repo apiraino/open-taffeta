@@ -94,8 +94,9 @@ impl User {
         let route = req.route()
             .expect("Could not unwrap route from request");
         if role == ROLE_USER {
-            if route.uri.path() == "/users" {
-                return false;
+            match route.uri.path() {
+                "/users"|"/admin" => { return false; },
+                _ => {}
             }
         }
         true

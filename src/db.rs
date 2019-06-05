@@ -49,11 +49,12 @@ impl<'a, 'r> FromRequest<'a, 'r> for Conn {
     }
 }
 
-pub fn get_user(conn: &SqliteConnection, user_id: i32)
+pub fn get_user(conn: &SqliteConnection, user_id: i32, only_active: Option<bool>)
                         -> Result<User, String>
 {
     let user_rs : Result<User, diesel::result::Error> = users::table
         .filter(users::id.eq(user_id))
+        .filter(users::is_active.eq(only_active.unwrap_or_else(|| false)))
         .get_result(&*conn);
 
     match user_rs {
