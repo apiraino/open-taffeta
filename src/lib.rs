@@ -54,8 +54,11 @@ pub fn runner(_env: Environment) -> Result<rocket::Rocket, String> {
                 routes::doors::delete_door,
                 routes::doors::buzz_door,
                 routes::admin::admin_panel,
-                routes::admin::admin_panel_user,
-                routes::admin::admin_panel_redirect
+                routes::admin::admin_panel_redirect,
+                routes::admin::admin_panel_get_login,
+                routes::admin::admin_panel_get_login_noauth,
+                routes::admin::admin_panel_post_login,
+                routes::admin::admin_panel_edit_user
             ],
         )
         .attach(Template::fairing())

@@ -1,20 +1,25 @@
 #![allow(proc_macro_derive_resolution_fallback)]
-use crate::db;
-use crate::models::{self as models, Role, RoleNew, User};
-use crate::responses::{ok, bad_request, created, APIResponse};
-use crate::schema::{roles, users};
-use crate::schema::users::dsl::*;
+
 use diesel::prelude::*;
 use diesel::result::DatabaseErrorKind;
+
 use rocket_contrib::json;
 // https://mozilla.logbot.info/rocket/20181211#c15708806
 // - Json<T> does not change anywhere.
 // - Json<Value> as a responder changes to JsonValue
 // - The new JsonValue is only really interesting as a Responder
 use rocket_contrib::json::Json;
+
 use validator::{Validate, ValidationError};
 use validator_derive::Validate;
+
 use serde_derive::{Serialize, Deserialize};
+
+use crate::db;
+use crate::models::{self as models, Role, RoleNew, User};
+use crate::responses::{ok, bad_request, created, APIResponse};
+use crate::schema::{roles, users};
+use crate::schema::users::dsl::*;
 use crate::auth::token::{Auth, self as auth};
 use crate::crypto;
 use crate::utils;
