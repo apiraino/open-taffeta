@@ -3,18 +3,50 @@
   <head>
     <meta charset="utf-8">
     <title>{{ title }}</title>
+
+    <script>
+      // TODO: it's 2019, use fetch()
+      function send(cb) {
+          // console.log('sending id=' + cb.id + ' checked=' + cb.checked);
+          var http = new XMLHttpRequest();
+          var url = '/admin/edit_user';
+          var params = 'user_id=' + cb.id + '&is_active=' + cb.checked;
+          http.open('POST', url, true);
+          http.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+          http.onreadystatechange = function() {
+              if (http.readyState == 4 && http.status == 201) {
+                  console.debug(http.responseText);
+                  update_result(JSON.parse(http.responseText)['detail']);
+              }
+          }
+          http.send(params);
+      }
+
+      function update_result(content) {
+          var container = document.getElementById("message");
+          container.innerHTML = content;
+      }
+    </script>
+
   </head>
   <body>
     <h1 style="text-align:center;">{{ title }}</h1>
-
-    <div>
-      {% for user_role in users %}
-      <span>
-        <a href="/user/{{ user_role.0.id }}">{{ user_role.0.email }}</a> ({{ user_role.1.name }}):
-        <input type="checkbox" name="is_active" checked={{ user_role.0.is_active }} />
-      </span><br />
-      {% endfor %}
-    </div>
-
+    <h3 style="text-align:center;"><div id="message">Click to update users{{ message }}</div></h3>
+    <form action="/admin/edit_user" method="post" accept-charset="utf-8">
+      <div>
+        {% for user_role in users %}
+        {% if user_role.1.name != "admin" %}
+        <span>
+          <a href="#">{{ user_role.0.email }}</a> (role={{ user_role.1.name }}):
+          <input type="hidden" name="user_id" value="{{ user_role.0.id }}" />
+          <input type="checkbox" id="{{user_role.0.id}}"
+                 {{ user_role.0.is_active | as_str | replace(from="true", to="checked") }}
+                 onclick="send(this);"
+                 />
+        </span><br />
+        {% endif %}
+        {% endfor %}
+      </div>
+    </form>
   </body>
 </html>
