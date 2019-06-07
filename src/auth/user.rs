@@ -36,8 +36,13 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
 
         // FIXME: borrower won't let me reuse the DB connection
         let conn = pool.get().unwrap();
-        match db::get_user(&conn, auth.user_id, true) {
+        match db::get_user(&conn, auth.user_id) {
             Ok(user) => {
+                if user.is_active == false {
+                    return Outcome::Failure (
+                        (Status::Unauthorized, RoleError::ServerError)
+                    );
+                }
                 let role = db::get_role(&conn, user.id);
                 if user.is_allowed(&request, &role.name) == false
                 {
