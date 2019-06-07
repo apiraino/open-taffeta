@@ -49,20 +49,13 @@ impl<'a, 'r> FromRequest<'a, 'r> for Conn {
     }
 }
 
-pub fn get_user(conn: &SqliteConnection, user_id: i32, only_active: bool)
+pub fn get_user(conn: &SqliteConnection, user_id: i32)
                         -> Result<User, String>
 {
     let mut user_rs : Result<User, diesel::result::Error>;
-    if only_active {
-        user_rs = users::table
-            .filter(users::id.eq(user_id))
-            .filter(users::is_active.eq(true))
-            .get_result(&*conn);
-    } else {
-        user_rs = users::table
-            .filter(users::id.eq(user_id))
-            .get_result(&*conn);
-    }
+    user_rs = users::table
+        .filter(users::id.eq(user_id))
+        .get_result(&*conn);
 
     match user_rs {
         Ok(records) => {
@@ -100,17 +93,17 @@ pub fn get_user_list(conn: &SqliteConnection, only_active: bool)
         Ok(vec_user) => { Ok(vec_user) }
     }
 }
-pub fn get_user_profile(conn: &SqliteConnection, user_id: i32)
+pub fn get_user_profile(conn: &SqliteConnection, email: &str)
                 -> Result<UserBaseResponse, String>
 {
     let query_result : Result<(User, Role), diesel::result::Error> = users::table
         .inner_join(roles::table)
-        .filter(users::id.eq(user_id))
+        .filter(users::email.eq(email))
         .get_result(&*conn);
 
     match query_result {
         Err(diesel::NotFound) => {
-            let err_msg = format!("error retrieving active user id {}", user_id);
+            let err_msg = format!("error retrieving active user email {}", email);
             return Err(err_msg);
         },
         Err(err) => {
@@ -127,7 +120,7 @@ pub fn get_user_profile(conn: &SqliteConnection, user_id: i32)
     }
 }
 
-pub fn update_user(conn: &SqliteConnection, user: User) {
+pub fn update_user(conn: &SqliteConnection, user: &User) {
 
     // SupportsReturningClause only available on Postgres
     // On backends which support the RETURNING keyword,
