@@ -8,17 +8,16 @@ pub enum CookieError {
     Missing
 }
 
-// here only to check cookies ...
-pub struct AdminUser {}
+pub struct AdminCookie {}
 
-impl<'a, 'r> FromRequest<'a, 'r> for AdminUser {
+impl<'a, 'r> FromRequest<'a, 'r> for AdminCookie {
     type Error = CookieError;
     fn from_request(request: &'a Request<'r>)
-                    -> request::Outcome<AdminUser, Self::Error> {
+                    -> request::Outcome<AdminCookie, Self::Error> {
         let mut cookies = request.cookies();
         match cookies.get_private("auth_status") {
             Some(_) => {
-                Outcome::Success(AdminUser{})
+                Outcome::Success(AdminCookie{})
             },
             None => {
                 // have the next route manage this case

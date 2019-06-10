@@ -12,7 +12,7 @@ use crypto_hash::{Algorithm, hex_digest};
 // Need serde directly, rocket_contrib export is still WIP
 use serde_derive::{Serialize, Deserialize};
 use crate::config;
-use crate::db::{Conn, SqlitePool};
+use crate::db;
 use crate::schema::userauth;
 
 #[derive(Queryable, Insertable, Debug, Deserialize, Serialize)]
@@ -69,12 +69,12 @@ impl<'a, 'r> FromRequest<'a, 'r> for Auth {
     fn from_request(request: &'a Request<'r>)
                     -> request::Outcome<Auth, Self::Error> {
         let pool = request
-            .guard::<State<SqlitePool>>()
+            .guard::<State<db::SqlitePool>>()
             .expect("Could not unwrap State in request guard");
         match pool.get() {
             Ok(conn) => {
                 if let Some(auth) =
-                    extract_auth_from_request(request, Conn(conn))
+                    extract_auth_from_request(request, db::Conn(conn))
                 {
                     Outcome::Success(auth)
                 } else {
@@ -91,7 +91,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for Auth {
     }
 }
 
-pub fn extract_auth_from_request(request: &Request, conn: Conn) -> Option<Auth> {
+pub fn extract_auth_from_request(request: &Request, conn: db::Conn) -> Option<Auth> {
     let header = request.headers().get("authorization").next();
     if let Some(rcvd_token) = header {
         let q = userauth::table
@@ -106,20 +106,23 @@ pub fn extract_auth_from_request(request: &Request, conn: Conn) -> Option<Auth> 
             }
         };
 
-        if is_valid_token(&auth_record) {
-            let user_auth : Auth = Auth {
-                exp: auth_record.exp,
-                user_id: auth_record.user_id,
-                client_id: auth_record.client_id,
-                token: auth_record.token
-            };
-            return Some(user_auth);
+        if ! is_expired_token(&auth_record) {
+            return None;
         }
+
+        let user_auth : Auth = Auth {
+            exp: auth_record.exp,
+            user_id: auth_record.user_id,
+            client_id: auth_record.client_id,
+            token: auth_record.token
+        };
+        return Some(user_auth);
     }
+    // no token found
     None
 }
 
-fn is_valid_token(auth: &AuthQ) -> bool {
+fn is_expired_token(auth: &AuthQ) -> bool {
     let now = get_now!();
     if now <= auth.exp {
         // eprintln!("Token still valid: {} >= {} ({})", auth.exp, now,
@@ -131,7 +134,7 @@ fn is_valid_token(auth: &AuthQ) -> bool {
     false
 }
 
-pub fn save_auth_token(conn: Conn, auth: &Auth) -> Result<(), &str> {
+pub fn save_auth_token(conn: db::Conn, auth: &Auth) -> Result<(), &str> {
 
     let insert_res = diesel::insert_into(userauth::table).values(auth).execute(&*conn);
     if let Err(DatabaseError(DatabaseErrorKind::UniqueViolation,_,)) = insert_res {
@@ -154,7 +157,7 @@ pub fn save_auth_token(conn: Conn, auth: &Auth) -> Result<(), &str> {
     Ok(())
 }
 
-fn trim_tokens(conn: Conn, user_id: i32, auth_tokens: Vec<(i32, String)>) -> Result<(), &'static str> {
+fn trim_tokens(conn: db::Conn, user_id: i32, auth_tokens: Vec<(i32, String)>) -> Result<(), &'static str> {
 
     // TODO: see if we can refactor into a single delete query
 

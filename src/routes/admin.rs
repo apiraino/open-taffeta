@@ -12,7 +12,7 @@ use serde_derive::Serialize;
 
 use crate::responses::{created, APIResponse};
 use crate::models::{Role, User, ROLE_ADMIN};
-use crate::auth::cookie::AdminUser;
+use crate::auth::cookie::AdminCookie;
 use crate::db;
 
 #[derive(Serialize)]
@@ -44,7 +44,7 @@ fn generate_template(title: &str, user_role_list: Vec<(User,Role)>, message: Str
 }
 
 #[get("/admin")]
-pub fn admin_panel_get_login(_admin: AdminUser) -> Redirect {
+pub fn admin_panel_get_login(_admin: AdminCookie) -> Redirect {
     Redirect::to("/admin/users")
 }
 
@@ -92,7 +92,7 @@ pub fn admin_panel_post_login(conn: db::Conn, sink: Result<Form<FormLogin>, Form
 }
 
 #[get("/admin/users")]
-pub fn admin_panel(conn: db::Conn, _admin: AdminUser)  -> Template {
+pub fn admin_panel(conn: db::Conn, _admin: AdminCookie)  -> Template {
     let users = db::get_user_list(&conn, false)
         .expect("Could not get users list");
     eprintln!("Found {} users", users.len());
@@ -107,7 +107,7 @@ pub fn admin_panel_redirect() -> Redirect {
 
 #[post("/admin/edit_user", data = "<user_data>")]
 pub fn admin_panel_edit_user(conn: db::Conn, user_data: Result<Form<FormEditUser>, FormError>,
-                             _admin: AdminUser) -> APIResponse {
+                             _admin: AdminCookie) -> APIResponse {
     let msg : &str;
     match user_data {
         Ok(form) => {

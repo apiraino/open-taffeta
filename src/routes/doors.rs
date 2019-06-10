@@ -7,10 +7,13 @@ use validator::Validate;
 use validator_derive::Validate;
 use serde_derive::{Serialize, Deserialize};
 use reqwest::{Url, Client};
+
 use crate::auth::token::Auth;
 use crate::db;
 use crate::models::Door;
 use crate::schema::doors;
+use crate::auth::admin::AdminUser;
+
 // If a module manages more tables, keep dsl imports in functions
 // https://gitter.im/diesel-rs/diesel?at=5b74459749932d4fe4e690b8
 use crate::schema::doors::dsl::*;
@@ -55,7 +58,7 @@ fn buzz(challenge: String, door_buzzer_url: String) -> Result<String, String> {
     eprintln!("Buzz returned: {}", res.message);
 
     match res.status {
-        400...500 => return Err(format!("Got error code: {}", res.status)),
+        400..=500 => return Err(format!("Got error code: {}", res.status)),
         200 => eprintln!("OK"),
         _ => ()
     };
@@ -67,7 +70,10 @@ pub fn get_challenge(door_buzzer_url: String) -> Result<String, String> {
     // TODO make it async
     let client = Client::new();
     let s = format!("{}/challenge", door_buzzer_url);
-    let url = Url::parse(&s).unwrap();
+    let url = Url::parse(&s)
+        .expect(
+            &format!("Cannot parse URL: {}", s)
+        );
 
     let mut response = match client.post(url).send() {
         Ok(x) => x,
@@ -80,7 +86,7 @@ pub fn get_challenge(door_buzzer_url: String) -> Result<String, String> {
     };
 
     match challenge.status {
-        400...500 => return Err(format!("Got error code: {}", challenge.status)),
+        400..=500 => return Err(format!("Got error code: {}", challenge.status)),
         200 => eprintln!("Got challenge, OK"),
         _ => ()
     };
@@ -93,7 +99,7 @@ pub fn get_challenge(door_buzzer_url: String) -> Result<String, String> {
 // https://medium.com/sean3z/building-a-restful-crud-api-with-rust-1867308352d8
 
 #[post("/door", data = "<door_data>", format = "application/json")]
-pub fn create_door(conn: db::Conn, _auth: Auth, door_data: Json<NewDoor>) -> APIResponse {
+pub fn create_door(conn: db::Conn, _auth: Auth, _admin: AdminUser, door_data: Json<NewDoor>) -> APIResponse {
     let new_door = NewDoor {
         name: door_data.name.clone(),
         address: door_data.address.clone(),
@@ -111,6 +117,7 @@ pub fn create_door(conn: db::Conn, _auth: Auth, door_data: Json<NewDoor>) -> API
     } else {
         eprintln!(">>> door with name {} created", &new_door.name);
     }
+    // TODO: remove this panic
     let door: Door = doors
         .filter(name.eq(&new_door.name))
         .first(&*conn)
@@ -120,7 +127,7 @@ pub fn create_door(conn: db::Conn, _auth: Auth, door_data: Json<NewDoor>) -> API
 }
 
 #[get("/doors", format = "application/json")]
-pub fn get_doors(conn: db::Conn, _auth: Auth) -> JsonValue {
+pub fn get_doors(conn: db::Conn, _auth: Auth, _admin: AdminUser) -> JsonValue {
     let doors_rs = doors.load::<Door>(&*conn).expect("error retrieving doors");
     json!({ "doors": doors_rs })
 }
@@ -147,10 +154,10 @@ pub fn get_door(conn: db::Conn, _auth: Auth, door_id: i32) -> APIResponse {
     }
 }
 
-#[delete("/door/<door_id>", format = "application/json")]
-pub fn delete_door(conn: db::Conn, _auth: Auth, door_id: i32) -> APIResponse {
+#[delete("/door/<door_id>")]
+pub fn delete_door(conn: db::Conn, _auth: Auth, _admin: AdminUser, door_id: i32) -> APIResponse {
     let err_msg = format!("Cannot delete door_id={}", door_id);
-    diesel::delete(doors.filter(id.eq(door_id))).execute(&*conn)
+    diesel::delete(doors.filter(doors::id.eq(door_id))).execute(&*conn)
         .expect(&err_msg);
     no_content()
 }
@@ -164,10 +171,13 @@ pub fn buzz_door(conn: db::Conn, _auth: Auth, door_id: i32) -> APIResponse {
     match door_res {
         Ok(door_data) => {
             // TODO: make these async
-            let challenge = String::from(get_challenge(door_data.buzzer_url.clone()).unwrap());
-            let buzz_result = buzz(challenge, door_data.buzzer_url).unwrap();
-            eprintln!(">>> Buzz result is: {}", buzz_result);
+            let challenge = get_challenge(door_data.buzzer_url.clone())
+                .expect("Failed to get the challenge");
 
+            let buzz_result = buzz(challenge, door_data.buzzer_url)
+                .expect("Could not buzz door");
+            eprintln!(">>> Buzz result is: {}", buzz_result);
+            // TODO: here better a 204
             let resp_data = json!({
                 "status": "OK",
                 "detail": format!("Buzzing door {}: {}", door_data.id, buzz_result)

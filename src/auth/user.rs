@@ -44,7 +44,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
                     );
                 }
                 let role = db::get_role(&conn, user.id);
-                if user.is_allowed(&request, &role.name) == false
+                if user.is_allowed(&request, &role.name, user.id) == false
                 {
                     return Outcome::Failure (
                         (Status::Unauthorized, RoleError::ServerError)

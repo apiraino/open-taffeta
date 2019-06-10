@@ -21,6 +21,7 @@ use crate::responses::{ok, bad_request, created, no_content, APIResponse};
 use crate::schema::{roles, users};
 use crate::schema::users::dsl::*;
 use crate::auth::token::{Auth, self as auth};
+use crate::auth::admin::AdminUser;
 use crate::crypto;
 use crate::utils;
 use crate::serializers::user::{UserBaseResponse, ResponseLoginSignup, UserEdit};
@@ -56,7 +57,7 @@ fn validate_pwd_strength(pwd: &str) -> Result<(), ValidationError> {
 }
 
 #[get("/users?<active>", format = "application/json")]
-pub fn get_users(conn: db::Conn, _auth: Auth, _admin: User, active: Option<bool>) -> APIResponse {
+pub fn get_users(conn: db::Conn, _auth: Auth, _admin: AdminUser, active: Option<bool>) -> APIResponse {
     let users_rs : Vec<(User,Role)> = match active {
         Some(_) => {
             users::table
@@ -235,12 +236,11 @@ pub fn signup_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIRespo
 }
 
 #[put("/user/<user_id>", data = "<user_data>", format = "application/json")]
-pub fn edit_user(conn: db::Conn, user_id: i32, user_data: Json<UserEdit>) -> APIResponse {
-
+pub fn edit_user(conn: db::Conn, _auth: Auth, _user: User, user_id: i32, user_data: Json<UserEdit>)
+                 -> APIResponse {
     let mut user = db::get_user(&conn, user_id)
         .expect(&format!("Could not retrieve user from data {:?}", user_data));
     user.email = user_data.email.clone();
-    user.is_active = user_data.is_active;
     match db::update_user(&conn, &user) {
         Err(err) => {
             let msg = format!("Error updating user {}: {}",
@@ -252,20 +252,7 @@ pub fn edit_user(conn: db::Conn, user_id: i32, user_data: Json<UserEdit>) -> API
             return bad_request().data(resp_data);
         },
         Ok(_) => {
-            let mut user_role = db::get_role(&conn, user_id);
-            user_role.name = user_data.role.clone();
-            match db::update_role(&conn, user_role) {
-                Err(err) => {
-                    let msg = format!("Error updating user {}: {}",
-                                      user_id, err);
-                    let resp_data = json!({
-                        "status":"error",
-                        "detail": msg
-                    });
-                    return bad_request().data(resp_data);
-                },
-                _ => {}
-            }
+            eprintln!("Profile update successful for user {}", user_id);
         }
     }
     no_content()
