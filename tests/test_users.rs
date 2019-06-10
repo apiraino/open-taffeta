@@ -125,37 +125,43 @@ fn test_user_edit_profile() {
     let (user_data, _, token) = common::signup_user(&state.conn, "josh@domain.com", true, ROLE_USER);
     let (user_data2, _, _) = common::signup_user(&state.conn, "aimee@domain.com", true, ROLE_USER);
 
-    // A user can only change their own email (a.t.m.)
+    // A user cannot touch another user profile
     let payload = json!({
-        "email": "my-new-email@domain.com",
-        "is_active": user_data.user.is_active,
-        "role": user_data.user.role
-    });
-    common::user_update(&client, &token, user_data.user.id, &payload, StatusCode::NO_CONTENT)
-        .expect("Could not update user");
-    assert_eq!("my-new-email@domain.com",
-               common::get_user_detail(&client, user_data.user.id, &token, StatusCode::OK)
-               .unwrap()
-               .user.email);
-
-    // A user cannot set the active flag
-    let payload = json!({
-        "email": user_data.user.email,
-        "is_active": false,
-        "role": user_data.user.role
-    });
-    common::user_update(&client, &token, user_data.user.id, &payload, StatusCode::UNAUTHORIZED)
-        .expect("Could not update user");
-
-    // A user cannot fiddle with another user profile
-    let payload = json!({
-        "email": "shief@domain.com",
-        "is_active": user_data.user.is_active,
-        "role": user_data.user.role
+        "email": user_data2.user.is_active,
+        "is_active": user_data2.user.is_active,
+        "role": user_data2.user.role
     });
     common::user_update(&client, &token, user_data2.user.id, &payload, StatusCode::UNAUTHORIZED)
         .expect("Could not update user");
 }
+
+#[test]
+fn test_user_edit_profile_fields() {
+    let state = DbState::new();
+    state.clean_tables();
+    let client = Client::new();
+    state.assert_empty_users();
+    // signup two user
+    let (user_data, _, token) = common::signup_user(&state.conn, "josh@domain.com", true, ROLE_USER);
+
+    let payload = json!({
+        "email": "my-new-email@domain.com",
+        "is_active": "false",
+        "role": "admin"
+    });
+    common::user_update(&client, &token, user_data.user.id, &payload, StatusCode::NO_CONTENT)
+        .expect("Could not update user");
+
+    let new_user = common::get_user_detail(&client, user_data.user.id, &token, StatusCode::OK)
+        .expect("Could not retrieve user");
+
+    // A user can only change their own email (a.t.m.)
+    // all other fields are discarded
+    assert_eq!(new_user.user.email, "my-new-email@domain.com");
+    assert_eq!(new_user.user.role, ROLE_USER);
+    assert_eq!(new_user.user.is_active, true);
+}
+
 
 #[test]
 fn test_user_list_not_allowed() {

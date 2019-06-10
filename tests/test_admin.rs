@@ -28,7 +28,12 @@ fn test_user_turns_into_admin() {
         name: open_taffeta_lib::models::ROLE_ADMIN.to_owned(),
         user: Some(user_id)
     };
-    open_taffeta_lib::db::update_role(&state.conn, role_data);
+    match open_taffeta_lib::db::update_role(&state.conn, role_data) {
+        Err(err) => {
+            panic!(err);
+        },
+        Ok(_) => {}
+    };
 
     // check role now
     let resp_data : ResponseUserDetail = common::get_user_detail(
