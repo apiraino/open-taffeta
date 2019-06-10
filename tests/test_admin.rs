@@ -63,26 +63,18 @@ fn test_admin_get_user_list() {
 }
 
 #[test]
-fn test_user_disallowed_admin_interface() {
+fn test_admin_login() {
     let state = DbState::new();
     state.clean_tables();
     state.assert_empty_users();
-    let (_, _, token_user) = common::signup_user(
-        &state.conn, "josh@domain.com", true, ROLE_USER);
-    let (_, _, token_admin) = common::signup_user(
+    let (_, pass, _) = common::signup_user(
         &state.conn, "admin@domain.com", true, ROLE_ADMIN);
-    let client = Client::new();
+    let client_admin = common::admin_login("admin@domain.com", &pass, StatusCode::OK)
+        .expect("Could not login into admin page");
 
+    // admin get the users list
     let admin_page = common::get_admin_page(
-        &client, &token_user, "", StatusCode::UNAUTHORIZED)
-        .expect("Could not get admin page");
-    let regexp = "not authorized";
-    assert_eq!(admin_page.to_lowercase().contains(regexp), true,
-               "Page regexp does not match: {}: got {}",
-               regexp, admin_page);
-
-    let admin_page = common::get_admin_page(
-        &client, &token_admin, "", StatusCode::OK)
+        &client_admin, StatusCode::OK)
         .expect("Could not get admin page");
     let regexp = "user list";
     assert_eq!(admin_page.to_lowercase().contains(regexp), true,
@@ -91,11 +83,12 @@ fn test_user_disallowed_admin_interface() {
 }
 
 #[test]
-fn test_admin_update_allowed() {
-    assert!(true, "Admin allowed to update any user");
-}
-
-#[test]
-fn test_admin_list_allowed() {
-    assert!(true, "Admin allowed to list users");
+fn test_admin_login_user() {
+    let state = DbState::new();
+    state.clean_tables();
+    state.assert_empty_users();
+    let (_, pass, _) = common::signup_user(
+        &state.conn, "user@domain.com", true, ROLE_USER);
+    let res = common::admin_login("user@domain.com", &pass, StatusCode::OK);
+    assert_eq!(true, res.is_err());
 }

@@ -69,7 +69,7 @@ pub fn signup_user(conn: &SqliteConnection, email: &str, is_active: bool, role: 
             email: email.to_owned(),
             is_active: true
         };
-        open_taffeta_lib::db::update_user(&conn, user);
+        open_taffeta_lib::db::update_user(&conn, &user);
     }
 
     if role != ROLE_USER {
@@ -87,10 +87,11 @@ pub fn signup_user(conn: &SqliteConnection, email: &str, is_active: bool, role: 
     (resp_data, user_data.get("password").unwrap().to_string(), token)
 }
 
-pub fn get_user_detail(client: &Client, user_id: i32, auth_token: &str, expected_status_code: StatusCode) -> Option<ResponseUserDetail> {
-    let api_base_uri = api_base_url();
+pub fn get_user_detail(client: &Client, user_id: i32, auth_token: &str, expected_status_code: StatusCode)
+                       -> Option<ResponseUserDetail> {
+    let url = api_base_url().join(&format!("/users/{}", user_id)).unwrap();
     let mut response = client
-        .get(api_base_uri.join(&format!("/users/{}", user_id)).unwrap())
+        .get(url)
         .header(AUTHORIZATION, HeaderValue::from_str(auth_token).unwrap())
         .send()
         .expect("Failed request: user detail");
@@ -168,18 +169,35 @@ pub fn user_login(client: &Client, login_data: &Value, expected_status_code: Sta
     None
 }
 
-pub fn get_admin_page(client: &Client, token: &str, params: &str, expected_status_code: StatusCode)
+pub fn user_update(client: &Client, token: &str, user_id: i32, payload: &Value, expected_status_code: StatusCode)
+                   -> Result<(), ResponseError> {
+    let url = api_base_url().join(&format!("/user/{}", user_id)).unwrap();
+    let mut response = client
+        .put(url)
+        .header(AUTHORIZATION, HeaderValue::from_str(token).unwrap())
+        .json(payload)
+        .send()
+        .expect("User update failed");
+    // assert_eq!(response.status(), expected_status_code);
+    if response.status() != StatusCode::NO_CONTENT {
+        eprintln!("{:?}", response);
+        let r: ResponseError = response.json()
+            .expect("Cannot parse response");
+        let err_msg = format!(
+            "Error in put update user: expected {}, got {}: {:?}",
+            expected_status_code, response.status(),
+            r.detail);
+        eprintln!("{}", err_msg);
+        return Err(r);
+    }
+    Ok(())
+}
+
+pub fn get_admin_page(client: &Client, expected_status_code: StatusCode)
                       -> Option<String> {
     let api_base_uri = api_base_url();
-
-    let mut url = String::from("/admin");
-    if params != "" {
-        url.push_str(params);
-    }
-
     let mut response = client
-        .get(api_base_uri.join(&url.to_owned()).unwrap())
-        .header(AUTHORIZATION, HeaderValue::from_str(token).unwrap())
+        .get(api_base_uri.join("/admin").unwrap())
         .send()
         .expect("Failed request: admin page");
     if response.status() != expected_status_code {
@@ -199,9 +217,53 @@ pub fn get_admin_page(client: &Client, token: &str, params: &str, expected_statu
         }
         panic!(err_msg);
     }
-    // if response.status() == StatusCode::OK {
-    //     // TODO: basic HTML parsing ?
-    // }
     let r = response.text().expect("Failed to unwrap response text");
     Some(r)
+}
+
+pub fn admin_login(email: &str, pass: &str, expected_status_code: StatusCode)
+                   -> Result<reqwest::Client, String> {
+    let api_base_uri = api_base_url();
+    let params = [("email", email), ("password", pass)];
+    let client = reqwest::Client::builder()
+        .cookie_store(true)
+        .build()
+        .unwrap();
+    let mut response_res = client
+        .post(api_base_uri.join("/admin").unwrap())
+        .form(&params)
+        .send();
+
+    let mut response = match response_res {
+        Err(e) => {
+            let s : String = Err(handler(e))?;
+            return Err(String::from(s));
+        },
+        Ok(x) => x
+    };
+
+    if response.status() != expected_status_code {
+        let err_msg = format!(
+            "Failed login on admin page: expected {}, got {}",
+            expected_status_code, response.status());
+        return Err(err_msg);
+    }
+    if response.status() == StatusCode::OK {
+        return Ok(client);
+    }
+    let r = response.text().expect("Failed to unwrap response text");
+    Err(r)
+}
+
+fn handler(e: reqwest::Error) -> &'static str {
+    if e.is_http() {
+        match e.url() {
+            None => println!("No Url given"),
+            Some(url) => println!("Problem making request to: {}", url),
+        }
+    }
+    if e.is_redirect() {
+        return "server redirecting too many times or making loop";
+    }
+    ""
 }
