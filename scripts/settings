@@ -2,3 +2,4 @@ ROCKET_ENV=prod
 DATABASE_URL="app.db"
 # openssl rand -base64 32
 SECRET="aaabbbcccdddeee......"
+STATIC_ASSETS_DIR="/etc/open-taffeta/static"
