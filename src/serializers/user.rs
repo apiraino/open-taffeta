@@ -28,8 +28,6 @@ pub struct ResponseLoginSignup {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct UserEdit {
     pub email: String,
-    pub is_active: bool,
-    pub role: String
 }
 
 #[derive(Deserialize, Debug)]

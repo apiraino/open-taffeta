@@ -42,7 +42,7 @@ pub fn runner(_env: Environment) -> Result<rocket::Rocket, String> {
         // mount the routes
         .mount(
             "/static",
-            StaticFiles::from(concat!(env!("CARGO_MANIFEST_DIR"), "/static"))
+            StaticFiles::from(concat!(env!("STATIC_ASSETS_DIR"), "/static"))
         )
         .mount(
             "/",

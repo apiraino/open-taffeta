@@ -52,7 +52,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for Conn {
 pub fn get_user(conn: &SqliteConnection, user_id: i32)
                         -> Result<User, String>
 {
-    let mut user_rs : Result<User, diesel::result::Error>;
+    let user_rs : Result<User, diesel::result::Error>;
     user_rs = users::table
         .filter(users::id.eq(user_id))
         .get_result(&*conn);
@@ -72,7 +72,7 @@ pub fn get_user(conn: &SqliteConnection, user_id: i32)
 pub fn get_user_list(conn: &SqliteConnection, only_active: bool)
                 -> Result<Vec<(User, Role)>, String>
 {
-    let mut query_result : Result<Vec<(User, Role)>, diesel::result::Error>;
+    let query_result : Result<Vec<(User, Role)>, diesel::result::Error>;
     if only_active {
         query_result = users::table
             .inner_join(roles::table)

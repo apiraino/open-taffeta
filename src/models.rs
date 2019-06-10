@@ -90,13 +90,30 @@ impl User {
     //         .load(conn)
     // }
 
-    pub fn is_allowed(&self, req: &rocket::Request, role: &str) -> bool {
+    pub fn is_allowed(&self, req: &rocket::Request, role: &str, user_id: i32) -> bool {
         let route = req.route()
             .expect("Could not unwrap route from request");
         if role == ROLE_USER {
+
+            // Users cannot list users, doors
+            // and access admin pages
             match route.uri.path() {
-                "/users"|"/admin" => { return false; },
+                "/users"|"/admin"|"/doors" => { return false; },
                 _ => {}
+            };
+
+            // Users cannot delete anything (a.t.m.)
+            if route.method == rocket::http::Method::Delete {
+                return false;
+            }
+            // Ensure users don't mess with other profiles
+            if route.uri.path() == "/user/<user_id>" {
+                let req_id = req.uri().segments().last()
+                    .expect("Could not extract id from route");
+                let req_id_int = req_id.parse::<i32>().unwrap();
+                if req_id_int != user_id {
+                    return false;
+                }
             }
         }
         true
