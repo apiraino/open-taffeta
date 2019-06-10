@@ -25,6 +25,7 @@ pub mod auth;
 
 use rocket::config::Environment;
 use rocket_contrib::templates::Template;
+use rocket_contrib::serve::StaticFiles;
 
 pub fn runner(_env: Environment) -> Result<rocket::Rocket, String> {
     let pool = db::init_pool();
@@ -39,6 +40,10 @@ pub fn runner(_env: Environment) -> Result<rocket::Rocket, String> {
 
     let rocket = rocket::ignite()
         // mount the routes
+        .mount(
+            "/static",
+            StaticFiles::from(concat!(env!("CARGO_MANIFEST_DIR"), "/static"))
+        )
         .mount(
             "/",
             // plug the DB connection pool

@@ -3,6 +3,7 @@
   <head>
     <meta charset="utf-8">
     <title>{{ title }}</title>
+    <link rel="shortcut icon" href="/static/favicon.ico">
 
     <script>
       // TODO: it's 2019, use fetch()
