@@ -20,7 +20,10 @@ assets = [
     ["scripts/open-taffeta.service","etc/systemd/system/","644"],
     ["scripts/settings","etc/open-taffeta/settings","644"],
     ["Rocket.toml","etc/open-taffeta/Rocket.toml","644"],
-    ["app.db","etc/open-taffeta/app.db","644"]
+    ["app.db","etc/open-taffeta/app.db","644"],
+    ["templates/","etc/open-taffeta/templates/","644"],
+    ["static/","etc/open-taffeta/static/","644"]
+
 ]
 
 [package.metadata.deb.variants.x86]
@@ -30,7 +33,9 @@ assets = [
     ["scripts/open-taffeta.service","etc/systemd/system/","644"],
     ["scripts/settings","etc/open-taffeta/settings","644"],
     ["Rocket.toml","etc/open-taffeta/Rocket.toml","644"],
-    ["app.db","etc/open-taffeta/app.db","644"]
+    ["app.db","etc/open-taffeta/app.db","644"],
+    ["templates","etc/open-taffeta/templates/","644"],
+    ["static","etc/open-taffeta/static/","644"]
 ]
 
 [package.metadata.deb.variants.armv6]
@@ -40,7 +45,9 @@ assets = [
     ["scripts/open-taffeta.service","etc/systemd/system/","644"],
     ["scripts/settings","etc/open-taffeta/settings","644"],
     ["Rocket.toml","etc/open-taffeta/Rocket.toml","644"],
-    ["app.db","etc/open-taffeta/app.db","644"]
+    ["app.db","etc/open-taffeta/app.db","644"],
+    ["templates/*","etc/open-taffeta/templates/","644"],
+    ["static/*","etc/open-taffeta/static/","644"]
 ]
 
 [lib]
@@ -55,12 +62,10 @@ rocket_cors = "0.5.0"
 validator = "0.8.0"
 validator_derive = "0.8.0"
 
-slug = "0.1.4"
-
 diesel = { version = "1.4.2", features = ["chrono", "sqlite", "r2d2"] }
 
-serde = "1.0.91"
-serde_derive = "1.0.91"
+serde = "1.0.92"
+serde_derive = "1.0.92"
 serde_json = "1.0.39"
 
 env_logger = "0.6.1"
@@ -68,7 +73,7 @@ log = "0.4.6"
 dotenv = "0.14.1"
 dotenv_codegen = "0.14.1"
 chrono = { version = "0.4.6", features = ["serde"] }
-reqwest = "0.9.17"
+reqwest = "0.9.18"
 rand = "0.6.5"
 audit = "0.1.1"
 openssl-sys = "0.9.47"
