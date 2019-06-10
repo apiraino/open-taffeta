@@ -18,6 +18,14 @@ pub fn not_authorized() -> JsonValue {
     })
 }
 
+#[catch(422)]
+pub fn unprocessable_entity() -> JsonValue {
+    json!({
+        "status": "error",
+        "detail": "Unprocessable Entity"
+    })
+}
+
 #[get("/")]
 pub fn get_index() -> &'static str {
     "Hey there! Interested in Rust?\n\n

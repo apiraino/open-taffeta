@@ -17,13 +17,13 @@ use serde_derive::{Serialize, Deserialize};
 
 use crate::db;
 use crate::models::{self as models, Role, RoleNew, User};
-use crate::responses::{ok, bad_request, created, APIResponse};
+use crate::responses::{ok, bad_request, created, no_content, APIResponse};
 use crate::schema::{roles, users};
 use crate::schema::users::dsl::*;
 use crate::auth::token::{Auth, self as auth};
 use crate::crypto;
 use crate::utils;
-use crate::serializers::user::{UserBaseResponse, ResponseLoginSignup};
+use crate::serializers::user::{UserBaseResponse, ResponseLoginSignup, UserEdit};
 
 #[derive(Serialize, Deserialize, Validate, Debug, Insertable)]
 #[table_name = "users"]
@@ -232,4 +232,41 @@ pub fn signup_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIRespo
             created().data(json!(resp_data))
         }
     }
+}
+
+#[put("/user/<user_id>", data = "<user_data>", format = "application/json")]
+pub fn edit_user(conn: db::Conn, user_id: i32, user_data: Json<UserEdit>) -> APIResponse {
+
+    let mut user = db::get_user(&conn, user_id)
+        .expect(&format!("Could not retrieve user from data {:?}", user_data));
+    user.email = user_data.email.clone();
+    user.is_active = user_data.is_active;
+    match db::update_user(&conn, &user) {
+        Err(err) => {
+            let msg = format!("Error updating user {}: {}",
+                              user_id, err);
+            let resp_data = json!({
+                "status":"error",
+                "detail": msg
+            });
+            return bad_request().data(resp_data);
+        },
+        Ok(_) => {
+            let mut user_role = db::get_role(&conn, user_id);
+            user_role.name = user_data.role.clone();
+            match db::update_role(&conn, user_role) {
+                Err(err) => {
+                    let msg = format!("Error updating user {}: {}",
+                                      user_id, err);
+                    let resp_data = json!({
+                        "status":"error",
+                        "detail": msg
+                    });
+                    return bad_request().data(resp_data);
+                },
+                _ => {}
+            }
+        }
+    }
+    no_content()
 }

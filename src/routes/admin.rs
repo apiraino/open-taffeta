@@ -71,6 +71,7 @@ pub fn admin_panel_post_login(conn: db::Conn, sink: Result<Form<FormLogin>, Form
                 }
             }
 
+            // TODO: create unique cookie content
             let cookie = Cookie::new("auth_status", "authorized!");
             // TODO: how does buliding a cookie work?
             // let cookie_b = Cookie::build("auth_status_pvt", "OK")
@@ -87,7 +88,7 @@ pub fn admin_panel_post_login(conn: db::Conn, sink: Result<Form<FormLogin>, Form
             eprintln!("Invalid form input: {}", f);
         }
     }
-    Redirect::to("/admin/login")
+    Redirect::to("/admin")
 }
 
 #[get("/admin/users")]
@@ -113,8 +114,10 @@ pub fn admin_panel_edit_user(conn: db::Conn, user_data: Result<Form<FormEditUser
             let mut user = db::get_user(&conn, form.user_id)
                 .expect(&format!("Could not retrieve user from form data {:?}", form));
             user.is_active = form.is_active;
-            db::update_user(&conn, &user);
-            msg = "User updated successfully";
+            match db::update_user(&conn, &user) {
+                Ok(_) => msg = "User updated successfully",
+                Err(_) => msg = "User update failed"
+            };
         },
         Err(FormDataError::Io(_)) => {
             msg = "Form edit user has invalid UTF-8";

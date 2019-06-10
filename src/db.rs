@@ -120,7 +120,8 @@ pub fn get_user_profile(conn: &SqliteConnection, email: &str)
     }
 }
 
-pub fn update_user(conn: &SqliteConnection, user: &User) {
+pub fn update_user(conn: &SqliteConnection, user: &User)
+                   -> Result<User, String> {
 
     // SupportsReturningClause only available on Postgres
     // On backends which support the RETURNING keyword,
@@ -132,16 +133,20 @@ pub fn update_user(conn: &SqliteConnection, user: &User) {
     let update_result : Result<User, diesel::result::Error> = user.save_changes(conn);
     assert_ne!(Err(diesel::NotFound), update_result);
     if let Err(res) = update_result {
-        eprintln!("Error in user update: {:?}", res);
+        return Err(format!("Error in user update: {:?}", res));
     }
+    Ok(update_result.unwrap())
 }
 
-pub fn update_role(conn: &SqliteConnection, role: Role) {
+pub fn update_role(conn: &SqliteConnection, role: Role)
+                   -> Result<Role, String> {
+    // TODO: ensure no one sets roles to 🍆
     let role_upd_res : Result<Role, diesel::result::Error> =
         role.save_changes(conn);
     if let Err(res) = role_upd_res {
-        eprintln!("Error in role update: {:?}", res);
+        return Err(format!("Error in role update: {:?}", res));
     }
+    Ok(role_upd_res.unwrap())
 }
 
 pub fn get_role(conn: &SqliteConnection, user_id: i32) -> Role {

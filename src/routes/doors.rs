@@ -238,7 +238,11 @@ mod tests {
 
         let q = doors.filter(name.eq("front-door"));
         let sql = diesel::debug_query::<Sqlite, _>(&q).to_string();
-        println!(">>> SQL: {:?}", sql);
+        // eprintln!(">>> SQL: {:?}", sql);
+        let regexp = "select";
+        assert_eq!(sql.to_lowercase().contains(regexp), true,
+                   "Debug SQL query returned wrong: {}: got {}",
+                   regexp, sql);
         teardown();
     }
 
@@ -251,7 +255,8 @@ mod tests {
             .find(door_data.id)
             .first(&conn)
             .unwrap();
-        println!(">>> door {:?}", door);
+        // eprintln!(">>> door {:?}", door);
+        assert_eq!(1, door.id);
         teardown();
     }
 

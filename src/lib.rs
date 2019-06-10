@@ -48,6 +48,7 @@ pub fn runner(_env: Environment) -> Result<rocket::Rocket, String> {
                 routes::users::get_user,
                 routes::users::login_user,
                 routes::users::signup_user,
+                routes::users::edit_user,
                 routes::doors::create_door,
                 routes::doors::get_doors,
                 routes::doors::get_door,
@@ -67,7 +68,7 @@ pub fn runner(_env: Environment) -> Result<rocket::Rocket, String> {
             // returns a 404 for URLs not mapped
             routes::all::not_found,
             routes::all::not_authorized,
-            // routes::all::bad_request
+            routes::all::unprocessable_entity
         ]);
 
     Ok(rocket)
