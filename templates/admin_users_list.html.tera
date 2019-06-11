@@ -29,25 +29,53 @@
       }
     </script>
 
+    <style>
+      table {
+          padding: 10px;
+          text-align: left;
+      }
+
+      th {
+          text-align: center;
+      }
+
+      td {
+          padding: 5px;
+          border: 1px solid black;
+          vertical-align: middle;
+          text-align: center;
+      }
+    </style>
+
   </head>
   <body>
     <h1 style="text-align:center;">{{ title }}</h1>
-    <h3 style="text-align:center;"><div id="message">Click to update users{{ message }}</div></h3>
+    <h3 style="text-align:center;"><div id="message">{{ message }}</div></h3>
     <form action="/admin/edit_user" method="post" accept-charset="utf-8">
-      <div>
+      <table>
+        <tr>
+          <th>Email</th><th>Role</th><th>Is active?</th>
+        </tr>
         {% for user_role in users %}
-        {% if user_role.1.name != "admin" %}
-        <span>
-          <a href="#">{{ user_role.0.email }}</a> (role={{ user_role.1.name }}):
-          <input type="hidden" name="user_id" value="{{ user_role.0.id }}" />
-          <input type="checkbox" id="{{user_role.0.id}}"
-                 {{ user_role.0.is_active | as_str | replace(from="true", to="checked") }}
-                 onclick="send(this);"
-                 />
-        </span><br />
-        {% endif %}
+        <tr>
+          <td>
+            <a href="#">{{ user_role.0.email }}</a>
+            <input type="hidden" name="user_id" value="{{ user_role.0.id }}" />
+          </td>
+          <td>
+            {{ user_role.1.name }}
+          </td>
+          <td>
+            <input type="checkbox" id="{{user_role.0.id}}"
+                   {{ user_role.0.is_active | as_str | replace(from="true", to="checked") }}
+                   {% if user_role.0.id == current_user_id %}
+                   readonly="readonly"
+                   {% endif %}
+                   onclick="send(this);" />
+          </td>
+        </tr>
         {% endfor %}
-      </div>
+      </table>
     </form>
   </body>
 </html>
