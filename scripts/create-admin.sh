@@ -6,7 +6,7 @@ if [ -z "$DATABASE_URL" ]; then
 fi
 
 function gen_pwd {
-    enc_pass=$( echo -n "$1" | openssl rand -base64 32 )
+    enc_pass=$( echo -n "$1" | sha256sum | cut -d " " -f 1 )
 }
 
 echo "### Creating admin user ###"
@@ -15,7 +15,7 @@ read email
 echo -n "Insert your pass: "
 read pass
 
-gen_pwd pass
+gen_pwd $pass
 
 # echo "Email is $email, pass is $pass, enc_pass is $enc_pass"
 sqlite3 $DATABASE_URL "DELETE from users;"
