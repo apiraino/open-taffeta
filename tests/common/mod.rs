@@ -196,7 +196,6 @@ pub fn user_login(
         }
         return Err(format!("Request failed as expected: {:?}", response));
     }
-    Err(format!("Unmanaged error: {:?}", response))
 }
 
 pub fn user_update(
@@ -207,7 +206,7 @@ pub fn user_update(
     expected_status_code: StatusCode,
 ) -> Result<(), String> {
     let url = api_base_url().join(&format!("/user/{}", user_id)).unwrap();
-    let mut response = client
+    let response = client
         .put(url)
         .header(AUTHORIZATION, HeaderValue::from_str(token).unwrap())
         .json(payload)
@@ -342,7 +341,7 @@ pub fn delete_door(
     expected_status_code: StatusCode,
 ) -> Result<(), String> {
     let url = api_base_url().join(&format!("/door/{}", door_id)).unwrap();
-    let mut response = client
+    let response = client
         .delete(url)
         .header(AUTHORIZATION, HeaderValue::from_str(token).unwrap())
         .send()
@@ -367,7 +366,7 @@ pub fn knock_door(
     expected_status_code: StatusCode,
 ) -> Result<(), String> {
     let url = api_base_url().join(&format!("/door/{}", door_id)).unwrap();
-    let mut response = client
+    let response = client
         .post(url)
         .header(AUTHORIZATION, HeaderValue::from_str(token).unwrap())
         .json(&json!({}))

@@ -20,7 +20,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for AdminCookie {
         let mut cookies = request.cookies();
         match cookies.get_private(config::COOKIE_NAME_AUTH_STATUS) {
             Some(val) => {
-                let (cookie_name, cookie_value) = val.name_value();
+                let (_cookie_name, cookie_value) = val.name_value();
                 let v: Vec<&str> = cookie_value.split(':').collect();
                 let user_id = v[0].parse::<i32>().unwrap();
                 Outcome::Success(AdminCookie { user_id })

@@ -6,7 +6,6 @@ extern crate serde_json;
 
 use crate::common::dbstate::DbState;
 use open_taffeta_lib::models::*;
-use open_taffeta_lib::serializers::doors::*;
 use reqwest::header::{HeaderValue, AUTHORIZATION};
 use reqwest::{Client, StatusCode};
 mod common;
@@ -71,7 +70,6 @@ fn test_door_create() {
 #[test]
 fn test_door_delete() {
     let state = DbState::new();
-    let api_base_uri = common::api_base_url();
     let (_, _, token) = common::signup_user(&state.conn, "josh@domain.com", true, ROLE_ADMIN);
     let client = Client::new();
     // check for 0 doors
