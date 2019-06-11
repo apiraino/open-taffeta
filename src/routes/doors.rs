@@ -88,10 +88,7 @@ pub fn get_challenge(door_buzzer_url: String) -> Result<String, String> {
         _ => (),
     };
 
-    eprintln!(
-        "Got status {} challenge {}",
-        challenge.status, challenge.message
-    );
+    eprintln!("Got status {} challenge {}", challenge.status, challenge.message);
     Ok(challenge.message)
 }
 
@@ -160,9 +157,7 @@ pub fn get_door(conn: db::Conn, _auth: Auth, door_id: i32) -> APIResponse {
 #[delete("/door/<door_id>")]
 pub fn delete_door(conn: db::Conn, _auth: Auth, _admin: AdminUser, door_id: i32) -> APIResponse {
     let err_msg = format!("Cannot delete door_id={}", door_id);
-    diesel::delete(doors.filter(doors::id.eq(door_id)))
-        .execute(&*conn)
-        .expect(&err_msg);
+    diesel::delete(doors.filter(doors::id.eq(door_id))).execute(&*conn).expect(&err_msg);
     no_content()
 }
 
@@ -238,9 +233,7 @@ mod tests {
 
     fn teardown() {
         let conn = get_connection();
-        diesel::delete(doors)
-            .execute(&conn)
-            .expect("Cannot prune doors table");
+        diesel::delete(doors).execute(&conn).expect("Cannot prune doors table");
     }
 
     #[test]

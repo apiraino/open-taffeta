@@ -53,10 +53,7 @@ fn test_door_create() {
     let response = client
         .post(api_base_uri.join("/door").unwrap())
         .json(&payload)
-        .header(
-            AUTHORIZATION,
-            HeaderValue::from_str(token.as_str()).unwrap(),
-        )
+        .header(AUTHORIZATION, HeaderValue::from_str(token.as_str()).unwrap())
         .send()
         .unwrap();
     assert_eq!(response.status(), StatusCode::CREATED);
@@ -65,10 +62,7 @@ fn test_door_create() {
     let response = client
         .get(api_base_uri.join("/doors").unwrap())
         .json(&payload)
-        .header(
-            AUTHORIZATION,
-            HeaderValue::from_str(token.as_str()).unwrap(),
-        )
+        .header(AUTHORIZATION, HeaderValue::from_str(token.as_str()).unwrap())
         .send()
         .unwrap();
     assert_eq!(response.status(), StatusCode::OK);
@@ -154,12 +148,7 @@ fn test_door_inactive_user_cannot_buzz_door() {
     assert!(true, res.is_ok());
     let door_data = res.unwrap();
 
-    let res = common::knock_door(
-        &client,
-        door_data.door.id,
-        &token_user,
-        StatusCode::UNAUTHORIZED,
-    );
+    let res = common::knock_door(&client, door_data.door.id, &token_user, StatusCode::UNAUTHORIZED);
     assert!(true, res.is_ok());
 }
 
@@ -188,11 +177,7 @@ fn test_door_user() {
     assert!(true, res.is_err());
 
     // user cannot delete a door
-    let res = common::delete_door(
-        &client,
-        door_data.door.id,
-        &token_user,
-        StatusCode::UNAUTHORIZED,
-    );
+    let res =
+        common::delete_door(&client, door_data.door.id, &token_user, StatusCode::UNAUTHORIZED);
     assert!(true, res.is_err());
 }

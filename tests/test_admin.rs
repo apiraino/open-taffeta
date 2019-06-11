@@ -76,7 +76,9 @@ fn test_admin_failed_login() {
     assert_eq!(
         err_msg.contains(regexp),
         true,
-        "Page regexp does not match: {}: got {:?}", regexp, err_msg
+        "Page regexp does not match: {}: got {:?}",
+        regexp,
+        err_msg
     );
 }
 

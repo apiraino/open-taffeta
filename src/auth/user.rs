@@ -16,9 +16,8 @@ pub enum RoleError {
 impl<'a, 'r> FromRequest<'a, 'r> for User {
     type Error = RoleError;
     fn from_request(request: &'a Request<'r>) -> request::Outcome<User, Self::Error> {
-        let pool = request
-            .guard::<State<SqlitePool>>()
-            .expect("Could not unwrap State in request guard");
+        let pool =
+            request.guard::<State<SqlitePool>>().expect("Could not unwrap State in request guard");
 
         let conn = match pool.get() {
             Ok(conn) => conn,

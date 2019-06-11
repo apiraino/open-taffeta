@@ -16,9 +16,8 @@ pub struct AdminUser {
 impl<'a, 'r> FromRequest<'a, 'r> for AdminUser {
     type Error = RoleError;
     fn from_request(request: &'a Request<'r>) -> request::Outcome<AdminUser, Self::Error> {
-        let pool = request
-            .guard::<State<SqlitePool>>()
-            .expect("Could not unwrap State in request guard");
+        let pool =
+            request.guard::<State<SqlitePool>>().expect("Could not unwrap State in request guard");
 
         let conn = match pool.get() {
             Ok(conn) => conn,
@@ -42,11 +41,8 @@ impl<'a, 'r> FromRequest<'a, 'r> for AdminUser {
                     return Outcome::Failure((Status::Unauthorized, RoleError::ServerError));
                 }
 
-                let admin_user = AdminUser {
-                    id: user.id,
-                    email: user.email,
-                    is_active: user.is_active,
-                };
+                let admin_user =
+                    AdminUser { id: user.id, email: user.email, is_active: user.is_active };
                 Outcome::Success(admin_user)
             }
             Err(err) => {

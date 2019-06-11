@@ -263,14 +263,8 @@ pub fn admin_login(
 ) -> Result<reqwest::Client, String> {
     let api_base_uri = api_base_url();
     let params = [("email", email), ("password", pass)];
-    let client = reqwest::Client::builder()
-        .cookie_store(true)
-        .build()
-        .unwrap();
-    let response_res = client
-        .post(api_base_uri.join("/admin").unwrap())
-        .form(&params)
-        .send();
+    let client = reqwest::Client::builder().cookie_store(true).build().unwrap();
+    let response_res = client.post(api_base_uri.join("/admin").unwrap()).form(&params).send();
 
     let mut response = match response_res {
         Err(e) => {
@@ -305,7 +299,7 @@ fn handler(e: reqwest::Error) -> &'static str {
         }
     }
     if e.is_redirect() {
-        return "Being redirected"
+        return "Being redirected";
     }
     "Unmanaged http client error"
 }

@@ -39,21 +39,9 @@ impl Auth {
     pub fn new(user_id: i32, user_email: &str) -> Auth {
         let exp = get_token_duration!();
         let rndstr = config::generate_password();
-        let value = format!(
-            "{}{}{}{}{}",
-            exp,
-            user_id,
-            user_email,
-            rndstr,
-            config::get_secret(),
-        );
+        let value = format!("{}{}{}{}{}", exp, user_id, user_email, rndstr, config::get_secret(),);
         let token = hex_digest(Algorithm::SHA1, &value.into_bytes());
-        Auth {
-            exp: exp,
-            user_id: user_id,
-            client_id: "client-type-web".to_string(),
-            token: token,
-        }
+        Auth { exp: exp, user_id: user_id, client_id: "client-type-web".to_string(), token: token }
     }
 }
 
@@ -88,9 +76,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for Auth {
 pub fn extract_auth_from_request(request: &Request, conn: db::Conn) -> Option<Auth> {
     let header = request.headers().get("authorization").next();
     if let Some(rcvd_token) = header {
-        let q = userauth::table
-            .filter(userauth::token.eq(rcvd_token))
-            .get_result(&*conn);
+        let q = userauth::table.filter(userauth::token.eq(rcvd_token)).get_result(&*conn);
         let auth_record: AuthQ = match q {
             Ok(x) => x,
             Err(err) => {
@@ -128,9 +114,7 @@ fn is_expired_token(auth: &AuthQ) -> bool {
 }
 
 pub fn save_auth_token(conn: db::Conn, auth: &Auth) -> Result<(), &str> {
-    let insert_res = diesel::insert_into(userauth::table)
-        .values(auth)
-        .execute(&*conn);
+    let insert_res = diesel::insert_into(userauth::table).values(auth).execute(&*conn);
     if let Err(DatabaseError(DatabaseErrorKind::UniqueViolation, _)) = insert_res {
         eprintln!("auth:save_auth_token Error saving token (Uniqueviolation)");
         return Err("auth:save_auth_token Error saving token (Uniqueviolation)");
@@ -142,10 +126,7 @@ pub fn save_auth_token(conn: db::Conn, auth: &Auth) -> Result<(), &str> {
         .filter(userauth::user_id.eq(auth.user_id))
         .order(userauth::exp.asc())
         .load(&*conn)
-        .expect(&format!(
-            "error getting token count for user id {}",
-            auth.user_id
-        ));
+        .expect(&format!("error getting token count for user id {}", auth.user_id));
     // eprintln!("For user id {} found {} tokens", auth.user_id, auth_tokens.len());
     trim_tokens(conn, auth.user_id, auth_tokens)?;
     Ok(())
@@ -161,10 +142,7 @@ fn trim_tokens(
     // Trim expired ones (with tolerance)
     if 1 == !diesel::delete(userauth::table.filter(userauth::exp.lt(get_now!())))
         .execute(&*conn)
-        .expect(&format!(
-            "error trimming auth tokens for user id {}",
-            user_id
-        ))
+        .expect(&format!("error trimming auth tokens for user id {}", user_id))
     {
         return Err("Tokens delete failed (for reasons...)");
     }
@@ -177,10 +155,7 @@ fn trim_tokens(
         let tokens_ids = tokens_in_excess.iter().map(|(x, _y)| x).collect::<Vec<_>>();
         if 1 == !diesel::delete(userauth::table.filter(userauth::id.eq_any(tokens_ids)))
             .execute(&*conn)
-            .expect(&format!(
-                "error trimming auth tokens for user id {}",
-                user_id
-            ))
+            .expect(&format!("error trimming auth tokens for user id {}", user_id))
         {
             return Err("Tokens delete failed (for reasons...)");
         }

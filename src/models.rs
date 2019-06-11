@@ -111,11 +111,7 @@ impl User {
             }
             // Ensure users don't mess with other profiles
             if route.uri.path() == "/user/<user_id>" {
-                let req_id = req
-                    .uri()
-                    .segments()
-                    .last()
-                    .expect("Could not extract id from route");
+                let req_id = req.uri().segments().last().expect("Could not extract id from route");
                 let req_id_int = req_id.parse::<i32>().unwrap();
                 if req_id_int != user_id {
                     return false;

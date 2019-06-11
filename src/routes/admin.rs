@@ -11,18 +11,18 @@ use rocket_contrib::templates::Template;
 use serde_derive::Serialize;
 
 use crate::auth::cookie::AdminCookie;
+use crate::config;
+use crate::crypto;
 use crate::db;
 use crate::models::{Role, User, ROLE_ADMIN};
 use crate::responses::{created, APIResponse};
-use crate::crypto;
-use crate::config;
 
 #[derive(Serialize)]
 struct TemplateAdminContext<'a> {
     title: &'a str,
     users: Vec<(User, Role)>,
     message: &'a str,
-    current_user_id: i32
+    current_user_id: i32,
 }
 
 #[derive(Debug, FromForm)]
@@ -37,12 +37,17 @@ pub struct FormLogin {
     password: String,
 }
 
-fn generate_template(title: &str, user_role_list: Vec<(User, Role)>, user_id: i32, message: &str) -> Template {
+fn generate_template(
+    title: &str,
+    user_role_list: Vec<(User, Role)>,
+    user_id: i32,
+    message: &str,
+) -> Template {
     let ctx = TemplateAdminContext {
         title: title,
         users: user_role_list,
         message: message,
-        current_user_id: user_id
+        current_user_id: user_id,
     };
     Template::render("admin_users_list", &ctx)
 }
@@ -81,15 +86,15 @@ pub fn admin_panel_post_login(
                         cookies.add_private(cookie);
                         retval = Redirect::to("/admin/users");
                     }
-                },
+                }
                 Err(_) => {
                     // eprintln!(">>> query failed {:?}", err);
                 }
             };
-        },
+        }
         Err(FormDataError::Io(_)) => {
             eprintln!("Form input was invalid UTF-8.");
-        },
+        }
         Err(FormDataError::Malformed(f)) | Err(FormDataError::Parse(_, f)) => {
             eprintln!("Invalid form input: {}", f);
         }
@@ -119,10 +124,8 @@ pub fn admin_panel_edit_user(
     let msg: &str;
     match user_data {
         Ok(form) => {
-            let mut user = db::get_user(&conn, form.user_id).expect(&format!(
-                "Could not retrieve user from form data {:?}",
-                form
-            ));
+            let mut user = db::get_user(&conn, form.user_id)
+                .expect(&format!("Could not retrieve user from form data {:?}", form));
             user.is_active = form.is_active;
             match db::update_user(&conn, &user) {
                 Ok(_) => msg = "User updated successfully",

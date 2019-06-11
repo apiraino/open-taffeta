@@ -34,11 +34,8 @@ fn test_user_signup() {
         "email": "hey@email.com"
     });
     let client = Client::new();
-    let mut response = client
-        .post(api_base_uri.join("/signup").unwrap())
-        .json(&user_data)
-        .send()
-        .unwrap();
+    let mut response =
+        client.post(api_base_uri.join("/signup").unwrap()).json(&user_data).send().unwrap();
     assert_eq!(response.status(), StatusCode::CREATED);
     let resp_data: ResponseLoginSignup = response.json().expect("Error unwrapping signup response");
     assert_eq!(resp_data.user.is_active, false);
@@ -82,11 +79,8 @@ fn test_user_already_signed_up() {
         "password": "1234567",
         "email": "josh1@domain.com"
     });
-    let mut response = client
-        .post(api_base_uri.join("/signup").unwrap())
-        .json(&user_data)
-        .send()
-        .unwrap();
+    let mut response =
+        client.post(api_base_uri.join("/signup").unwrap()).json(&user_data).send().unwrap();
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
     let resp_data: ResponseError = response.json().expect("Error reading error response");
     assert_eq!(resp_data.detail.contains("record already exists"), true);
@@ -108,10 +102,7 @@ fn test_user_detail() {
     let q = format!("/users/{}", user_data.user.id);
     let mut response = client
         .get(api_base_uri.join(&q).unwrap())
-        .header(
-            AUTHORIZATION,
-            HeaderValue::from_str(token.as_str()).unwrap(),
-        )
+        .header(AUTHORIZATION, HeaderValue::from_str(token.as_str()).unwrap())
         .send()
         .unwrap();
     assert_eq!(response.status(), StatusCode::OK);
@@ -135,14 +126,8 @@ fn test_user_edit_profile() {
         "is_active": user_data2.user.is_active,
         "role": user_data2.user.role
     });
-    common::user_update(
-        &client,
-        &token,
-        user_data2.user.id,
-        &payload,
-        StatusCode::UNAUTHORIZED,
-    )
-    .expect("Could not update user");
+    common::user_update(&client, &token, user_data2.user.id, &payload, StatusCode::UNAUTHORIZED)
+        .expect("Could not update user");
 }
 
 #[test]
@@ -160,14 +145,8 @@ fn test_user_edit_profile_fields() {
         "is_active": "false",
         "role": "admin"
     });
-    common::user_update(
-        &client,
-        &token,
-        user_data.user.id,
-        &payload,
-        StatusCode::NO_CONTENT,
-    )
-    .expect("Could not update user");
+    common::user_update(&client, &token, user_data.user.id, &payload, StatusCode::NO_CONTENT)
+        .expect("Could not update user");
 
     let new_user = common::get_user_detail(&client, user_data.user.id, &token, StatusCode::OK)
         .expect("Could not retrieve user");
@@ -248,11 +227,7 @@ fn test_user_login_generate_auth_token() {
 #[test]
 fn test_user_expire_auth_token() {
     let state = DbState::new();
-    let user = state.create_user(
-        "user@domain.com",
-        false,
-        open_taffeta_lib::models::ROLE_USER,
-    );
+    let user = state.create_user("user@domain.com", false, open_taffeta_lib::models::ROLE_USER);
     let client = Client::new();
 
     // create a bunch of tokens
@@ -293,9 +268,7 @@ fn test_user_login_trim_expired_auth_token() {
     // create an expired token
     let expiry_date_expired =
         chrono::NaiveDateTime::parse_from_str("2017-09-05 23:56:04", "%Y-%m-%d %H:%M:%S").unwrap();
-    state
-        .create_auth(user_id, &user_data.user.email, expiry_date_expired)
-        .unwrap();
+    state.create_auth(user_id, &user_data.user.email, expiry_date_expired).unwrap();
     assert_eq!(2, state.count_auth_token(user_data.user.id));
     let login_data = json!({
         "password": password,
@@ -327,8 +300,5 @@ fn test_user_login_rotate_auth_token() {
     for _ in 0..25 {
         common::user_login(&client, &login_data, StatusCode::OK).unwrap();
     }
-    assert_eq!(
-        state.count_auth_token(user_data.user.id),
-        open_taffeta_lib::config::MAX_AUTH_TOKEN
-    );
+    assert_eq!(state.count_auth_token(user_data.user.id), open_taffeta_lib::config::MAX_AUTH_TOKEN);
 }

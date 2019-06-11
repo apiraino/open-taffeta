@@ -42,10 +42,7 @@ pub fn runner(_env: Environment) -> Result<rocket::Rocket, String> {
 
     let rocket = rocket::ignite()
         // mount the routes
-        .mount(
-            "/static",
-            StaticFiles::from(concat!(env!("STATIC_ASSETS_DIR"), "/static")),
-        )
+        .mount("/static", StaticFiles::from(concat!(env!("STATIC_ASSETS_DIR"), "/static")))
         .mount(
             "/",
             // plug the DB connection pool

@@ -69,25 +69,18 @@ pub fn get_users(
             .filter(users::is_active.eq(true))
             .load(&*conn)
             .expect("error retrieving active users"),
-        None => users::table
-            .inner_join(roles::table)
-            .load(&*conn)
-            .expect("error retrieving users"),
+        None => users::table.inner_join(roles::table).load(&*conn).expect("error retrieving users"),
     };
 
-    let payload: Vec<UserBaseResponse> = users_rs
-        .into_iter()
-        .map(|(user, role)| utils::attach_role_to_user(&user, &role))
-        .collect();
+    let payload: Vec<UserBaseResponse> =
+        users_rs.into_iter().map(|(user, role)| utils::attach_role_to_user(&user, &role)).collect();
     ok().data(json!({ "users": payload }))
 }
 
 #[get("/users/<user_id>", format = "application/json")]
 pub fn get_user(conn: db::Conn, _auth: Auth, user_id: i32) -> APIResponse {
-    let query_result: Result<(User, Role), diesel::result::Error> = users::table
-        .inner_join(roles::table)
-        .filter(users::id.eq(user_id))
-        .get_result(&*conn);
+    let query_result: Result<(User, Role), diesel::result::Error> =
+        users::table.inner_join(roles::table).filter(users::id.eq(user_id)).get_result(&*conn);
 
     match query_result {
         Err(diesel::NotFound) => {
@@ -110,10 +103,7 @@ pub fn get_user(conn: db::Conn, _auth: Auth, user_id: i32) -> APIResponse {
 
 #[post("/login", data = "<user_data>", format = "application/json")]
 pub fn login_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIResponse {
-    let mut logmein = UserLoginSignup {
-        password: user_data.password,
-        email: user_data.email,
-    };
+    let mut logmein = UserLoginSignup { password: user_data.password, email: user_data.email };
 
     // examples
     // https://github.com/ayourtch/diesel-join-example/blob/master/src/lib.rs
@@ -137,10 +127,7 @@ pub fn login_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIRespon
         Err(err) => {
             eprintln!(
                 "{}",
-                &format!(
-                    "Could not retrieve valid user with email {:?}: {}",
-                    logmein.email, err
-                )
+                &format!("Could not retrieve valid user with email {:?}: {}", logmein.email, err)
             );
             let resp_data = json!({
                 "status": "error",
@@ -151,15 +138,13 @@ pub fn login_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIRespon
         }
     };
 
-    let user_rs : Vec<(User, Role)> = users::table
+    let user_rs: Vec<(User, Role)> = users::table
         .inner_join(roles::table)
         .filter(users::is_active.eq(true))
         .filter(users::email.eq(&logmein.email))
         .filter(users::password.eq(&logmein.password))
         .load(&*conn)
-        .expect(
-            &format!("error retrieving active user with email={}", logmein.email)
-        );
+        .expect(&format!("error retrieving active user with email={}", logmein.email));
 
     match user_rs.len() {
         1 => {
@@ -175,10 +160,7 @@ pub fn login_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIRespon
                 return bad_request().data(resp_data);
             }
             let user_data = utils::attach_role_to_user(&user, &user_role);
-            let resp_data = ResponseLoginSignup {
-                auth: user_auth,
-                user: user_data,
-            };
+            let resp_data = ResponseLoginSignup { auth: user_auth, user: user_data };
             ok().data(json!(resp_data))
         }
         _ => {
@@ -202,10 +184,7 @@ pub fn login_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIRespon
 
 #[post("/signup", data = "<user_data>", format = "application/json")]
 pub fn signup_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIResponse {
-    let mut new_user = UserLoginSignup {
-        password: user_data.password,
-        email: user_data.email,
-    };
+    let mut new_user = UserLoginSignup { password: user_data.password, email: user_data.email };
 
     let res = new_user.validate();
     if res.is_err() {
@@ -243,10 +222,7 @@ pub fn signup_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIRespo
                 .first(&*conn)
                 .expect(&format!("error getting user with email {}", new_user.email));
 
-            let role_data = RoleNew {
-                name: models::ROLE_USER.to_owned(),
-                user: Some(user.id),
-            };
+            let role_data = RoleNew { name: models::ROLE_USER.to_owned(), user: Some(user.id) };
             let user_role = db::add_role(&conn, role_data)
                 .expect(&format!("Could not add/retrieve role for user {}", user.id));
             let user_auth = user.to_auth();
@@ -260,10 +236,7 @@ pub fn signup_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIRespo
                 return bad_request().data(resp_data);
             }
             let user_data = utils::attach_role_to_user(&user, &user_role);
-            let resp_data = ResponseLoginSignup {
-                auth: user_auth,
-                user: user_data,
-            };
+            let resp_data = ResponseLoginSignup { auth: user_auth, user: user_data };
             created().data(json!(resp_data))
         }
     }
@@ -277,10 +250,8 @@ pub fn edit_user(
     user_id: i32,
     user_data: Json<UserEdit>,
 ) -> APIResponse {
-    let mut user = db::get_user(&conn, user_id).expect(&format!(
-        "Could not retrieve user from data {:?}",
-        user_data
-    ));
+    let mut user = db::get_user(&conn, user_id)
+        .expect(&format!("Could not retrieve user from data {:?}", user_data));
     user.email = user_data.email.clone();
     match db::update_user(&conn, &user) {
         Err(err) => {

@@ -5,7 +5,7 @@ use std::env;
 pub const MAX_AUTH_TOKEN: i64 = 5;
 // TODO: wrestle with lifetimes ...
 // pub const CLIENT_TYPE_WEB : &str = "client-type-web";
-pub const COOKIE_NAME_AUTH_STATUS : &str = "open-taffeta-admin-auth";
+pub const COOKIE_NAME_AUTH_STATUS: &str = "open-taffeta-admin-auth";
 
 #[macro_export]
 macro_rules! get_token_duration {
@@ -39,8 +39,5 @@ pub fn get_secret() -> String {
 }
 
 pub fn generate_password() -> String {
-    rand::thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(30)
-        .collect::<String>()
+    rand::thread_rng().sample_iter(&Alphanumeric).take(30).collect::<String>()
 }
