@@ -4,11 +4,11 @@ extern crate reqwest;
 #[macro_use]
 extern crate serde_json;
 
+use crate::common::dbstate::DbState;
+use open_taffeta_lib::models::*;
+use open_taffeta_lib::serializers::doors::*;
 use reqwest::header::{HeaderValue, AUTHORIZATION};
 use reqwest::{Client, StatusCode};
-use open_taffeta_lib::serializers::doors::*;
-use open_taffeta_lib::models::*;
-use crate::common::dbstate::DbState;
 mod common;
 
 // TODO: have a look here
@@ -53,7 +53,10 @@ fn test_door_create() {
     let response = client
         .post(api_base_uri.join("/door").unwrap())
         .json(&payload)
-        .header(AUTHORIZATION, HeaderValue::from_str(token.as_str()).unwrap())
+        .header(
+            AUTHORIZATION,
+            HeaderValue::from_str(token.as_str()).unwrap(),
+        )
         .send()
         .unwrap();
     assert_eq!(response.status(), StatusCode::CREATED);
@@ -62,7 +65,10 @@ fn test_door_create() {
     let response = client
         .get(api_base_uri.join("/doors").unwrap())
         .json(&payload)
-        .header(AUTHORIZATION, HeaderValue::from_str(token.as_str()).unwrap())
+        .header(
+            AUTHORIZATION,
+            HeaderValue::from_str(token.as_str()).unwrap(),
+        )
         .send()
         .unwrap();
     assert_eq!(response.status(), StatusCode::OK);
@@ -95,7 +101,8 @@ fn test_door_delete() {
 fn test_door_buzz() {
     let state = DbState::new();
     let (_, _, token_user) = common::signup_user(&state.conn, "josh@domain.com", true, ROLE_USER);
-    let (_, _, token_admin) = common::signup_user(&state.conn, "admin@domain.com", true, ROLE_ADMIN);
+    let (_, _, token_admin) =
+        common::signup_user(&state.conn, "admin@domain.com", true, ROLE_ADMIN);
     let client = Client::new();
     let payload = json!({
         "name": "door123",
@@ -120,7 +127,7 @@ fn test_door_buzz() {
 #[test]
 fn test_door_inactive_admin_unauthorized() {
     let state = DbState::new();
-    let (_, _, token) = common::signup_user(&state.conn, "josh@domain.com", false, ROLE_ADMIN);
+    let (_, _, token) = common::signup_user(&state.conn, "admin@domain.com", false, ROLE_ADMIN);
     let client = Client::new();
     let payload = json!({
         "name": "door123",
@@ -181,6 +188,11 @@ fn test_door_user() {
     assert!(true, res.is_err());
 
     // user cannot delete a door
-    let res = common::delete_door(&client, door_data.door.id, &token_user, StatusCode::UNAUTHORIZED);
+    let res = common::delete_door(
+        &client,
+        door_data.door.id,
+        &token_user,
+        StatusCode::UNAUTHORIZED,
+    );
     assert!(true, res.is_err());
 }

@@ -5,17 +5,28 @@
 // AsChangeSet + Indentifiable => for `.save_changes()`
 // ... there are many more ...
 
-use crate::schema::{roles, users};
 use crate::auth::token::Auth;
-use serde_derive::{Serialize, Deserialize};
+use crate::schema::{roles, users};
 use diesel::dsl::Select;
+use serde_derive::{Deserialize, Serialize};
 
-#[derive(Queryable, Clone, Serialize, Deserialize, Debug, Default, Insertable, AsChangeset, Identifiable, PartialEq)]
+#[derive(
+    Queryable,
+    Clone,
+    Serialize,
+    Deserialize,
+    Debug,
+    Default,
+    Insertable,
+    AsChangeset,
+    Identifiable,
+    PartialEq,
+)]
 pub struct User {
     pub id: i32,
     pub password: String,
     pub email: String,
-    pub is_active: bool
+    pub is_active: bool,
 }
 
 #[derive(Queryable, Serialize, Deserialize, Debug, Default)]
@@ -34,36 +45,28 @@ pub struct Door {
 //     USER,
 // }
 
-pub const ROLE_ADMIN : &str = "admin";
-pub const ROLE_USER : &str = "user";
+pub const ROLE_ADMIN: &str = "admin";
+pub const ROLE_USER: &str = "user";
 
 #[derive(Debug, Identifiable, Queryable, Serialize, Deserialize, AsChangeset)]
 pub struct Role {
     pub id: i32,
     pub name: String,
-    pub user: Option<i32>
+    pub user: Option<i32>,
 }
 
 #[derive(Insertable, Queryable, Serialize, Deserialize, AsChangeset)]
 #[table_name = "roles"]
 pub struct RoleNew {
     pub name: String,
-    pub user: Option<i32>
+    pub user: Option<i32>,
 }
 
 // type DieselResult<T> = Result<T, diesel::result::Error>;
 
-type AllColumns = (
-    users::id,
-    users::email,
-    users::is_active,
-);
+type AllColumns = (users::id, users::email, users::is_active);
 
-pub const ALL_COLUMNS: AllColumns = (
-    users::id,
-    users::email,
-    users::is_active
-);
+pub const ALL_COLUMNS: AllColumns = (users::id, users::email, users::is_active);
 
 type All = Select<users::table, AllColumns>;
 
@@ -91,14 +94,14 @@ impl User {
     // }
 
     pub fn is_allowed(&self, req: &rocket::Request, role: &str, user_id: i32) -> bool {
-        let route = req.route()
-            .expect("Could not unwrap route from request");
+        let route = req.route().expect("Could not unwrap route from request");
         if role == ROLE_USER {
-
             // Users cannot list users, doors
             // and access admin pages
             match route.uri.path() {
-                "/users"|"/admin"|"/doors" => { return false; },
+                "/users" | "/admin" | "/doors" => {
+                    return false;
+                }
                 _ => {}
             };
 
@@ -108,7 +111,10 @@ impl User {
             }
             // Ensure users don't mess with other profiles
             if route.uri.path() == "/user/<user_id>" {
-                let req_id = req.uri().segments().last()
+                let req_id = req
+                    .uri()
+                    .segments()
+                    .last()
                     .expect("Could not extract id from route");
                 let req_id_int = req_id.parse::<i32>().unwrap();
                 if req_id_int != user_id {

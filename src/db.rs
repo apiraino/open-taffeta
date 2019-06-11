@@ -93,9 +93,33 @@ pub fn get_user_list(conn: &SqliteConnection, only_active: bool)
         Ok(vec_user) => { Ok(vec_user) }
     }
 }
+
+pub fn get_active_user(conn: &SqliteConnection, pass: &str, email: &str)
+                       -> Result<(User, Role), String> {
+    let query_result : Result<(User, Role), diesel::result::Error> = users::table
+        .inner_join(roles::table)
+        .filter(users::is_active.eq(true))
+        .filter(users::email.eq(email))
+        .filter(users::password.eq(pass))
+        .get_result(&*conn);
+
+    match query_result {
+        Err(diesel::NotFound) => {
+            let err_msg = format!("error retrieving active user email {}", email);
+            return Err(err_msg);
+        },
+        Err(err) => {
+            let err_msg = format!("error executing query: {}", err);
+            return Err(err_msg);
+        }
+        Ok((user, role)) =>  {
+            Ok((user, role))
+        }
+    }
+}
+
 pub fn get_user_profile(conn: &SqliteConnection, email: &str)
-                -> Result<UserBaseResponse, String>
-{
+                -> Result<UserBaseResponse, String> {
     let query_result : Result<(User, Role), diesel::result::Error> = users::table
         .inner_join(roles::table)
         .filter(users::email.eq(email))

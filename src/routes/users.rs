@@ -13,29 +13,29 @@ use rocket_contrib::json::Json;
 use validator::{Validate, ValidationError};
 use validator_derive::Validate;
 
-use serde_derive::{Serialize, Deserialize};
+use serde_derive::{Deserialize, Serialize};
 
+use crate::auth::admin::AdminUser;
+use crate::auth::token::{self as auth, Auth};
+use crate::crypto;
 use crate::db;
 use crate::models::{self as models, Role, RoleNew, User};
-use crate::responses::{ok, bad_request, created, no_content, APIResponse};
-use crate::schema::{roles, users};
+use crate::responses::*;
 use crate::schema::users::dsl::*;
-use crate::auth::token::{Auth, self as auth};
-use crate::auth::admin::AdminUser;
-use crate::crypto;
+use crate::schema::{roles, users};
+use crate::serializers::user::{ResponseLoginSignup, UserBaseResponse, UserEdit};
 use crate::utils;
-use crate::serializers::user::{UserBaseResponse, ResponseLoginSignup, UserEdit};
 
 #[derive(Serialize, Deserialize, Validate, Debug, Insertable)]
 #[table_name = "users"]
-pub struct UserLoginSignup {
+pub struct UserLoginSignup<'a> {
     #[validate(
         length(min = "6", message = "Password too short"),
         custom = "validate_pwd_strength"
     )]
-    password: String,
+    password: &'a str,
     #[validate(email(message = "Invalid email"))]
-    email: String
+    email: &'a str,
 }
 
 fn validate_pwd_strength(pwd: &str) -> Result<(), ValidationError> {
@@ -57,33 +57,34 @@ fn validate_pwd_strength(pwd: &str) -> Result<(), ValidationError> {
 }
 
 #[get("/users?<active>", format = "application/json")]
-pub fn get_users(conn: db::Conn, _auth: Auth, _admin: AdminUser, active: Option<bool>) -> APIResponse {
-    let users_rs : Vec<(User,Role)> = match active {
-        Some(_) => {
-            users::table
-                .inner_join(roles::table)
-                .filter(users::is_active.eq(true))
-                .load(&*conn)
-                .expect("error retrieving active users")
-        },
-        None => {
-            users::table
-                .inner_join(roles::table)
-                .load(&*conn)
-                .expect("error retrieving users")
-        }
+pub fn get_users(
+    conn: db::Conn,
+    _auth: Auth,
+    _admin: AdminUser,
+    active: Option<bool>,
+) -> APIResponse {
+    let users_rs: Vec<(User, Role)> = match active {
+        Some(_) => users::table
+            .inner_join(roles::table)
+            .filter(users::is_active.eq(true))
+            .load(&*conn)
+            .expect("error retrieving active users"),
+        None => users::table
+            .inner_join(roles::table)
+            .load(&*conn)
+            .expect("error retrieving users"),
     };
 
-    let payload : Vec<UserBaseResponse> = users_rs
+    let payload: Vec<UserBaseResponse> = users_rs
         .into_iter()
-        .map(|(user, role)| utils::attach_role_to_user(&user, &role) )
+        .map(|(user, role)| utils::attach_role_to_user(&user, &role))
         .collect();
-    ok().data( json!({ "users": payload }) )
+    ok().data(json!({ "users": payload }))
 }
 
 #[get("/users/<user_id>", format = "application/json")]
 pub fn get_user(conn: db::Conn, _auth: Auth, user_id: i32) -> APIResponse {
-    let query_result : Result<(User, Role), diesel::result::Error> = users::table
+    let query_result: Result<(User, Role), diesel::result::Error> = users::table
         .inner_join(roles::table)
         .filter(users::id.eq(user_id))
         .get_result(&*conn);
@@ -95,7 +96,7 @@ pub fn get_user(conn: db::Conn, _auth: Auth, user_id: i32) -> APIResponse {
                 "detail": format!("error retrieving active user id {}", user_id)
             });
             bad_request().data(resp_data)
-        },
+        }
         Err(err) => {
             let resp_data = json!({
                 "status": "error",
@@ -202,8 +203,8 @@ pub fn login_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIRespon
 #[post("/signup", data = "<user_data>", format = "application/json")]
 pub fn signup_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIResponse {
     let mut new_user = UserLoginSignup {
-        password: user_data.password.clone(),
-        email: user_data.email.clone()
+        password: user_data.password,
+        email: user_data.email,
     };
 
     let res = new_user.validate();
@@ -216,14 +217,12 @@ pub fn signup_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIRespo
         });
         return bad_request().data(resp_data);
     }
-    new_user.password = crypto::hash_password(new_user.password);
-
+    // make the borrow check happy
+    let hashed_pwd = crypto::hash_password(user_data.password.as_bytes());
+    new_user.password = &hashed_pwd;
     match diesel::insert_into(users).values(&new_user).execute(&*conn) {
         Err(err) => {
-            if let diesel::result::Error::DatabaseError(
-                DatabaseErrorKind::UniqueViolation,
-                _,
-            ) = err
+            if let diesel::result::Error::DatabaseError(DatabaseErrorKind::UniqueViolation, _) = err
             {
                 let resp_data = json!({
                     "status":"error",
@@ -237,24 +236,19 @@ pub fn signup_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIRespo
                 });
                 bad_request().data(resp_data)
             }
-        },
+        }
         Ok(_) => {
             let user: User = users::table
                 .filter(users::email.eq(&new_user.email))
                 .first(&*conn)
-                .expect(&format!(
-                    "error getting user with email {}",
-                    new_user.email));
+                .expect(&format!("error getting user with email {}", new_user.email));
 
             let role_data = RoleNew {
                 name: models::ROLE_USER.to_owned(),
-                user: Some(user.id)
+                user: Some(user.id),
             };
             let user_role = db::add_role(&conn, role_data)
-                .expect(
-                    &format!("Could not add/retrive role for user {}", user.id)
-                );
-
+                .expect(&format!("Could not add/retrieve role for user {}", user.id));
             let user_auth = user.to_auth();
             if let Err(err) = auth::save_auth_token(conn, &user_auth) {
                 let resp_data = json!({
@@ -268,7 +262,7 @@ pub fn signup_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIRespo
             let user_data = utils::attach_role_to_user(&user, &user_role);
             let resp_data = ResponseLoginSignup {
                 auth: user_auth,
-                user: user_data
+                user: user_data,
             };
             created().data(json!(resp_data))
         }
@@ -276,21 +270,27 @@ pub fn signup_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIRespo
 }
 
 #[put("/user/<user_id>", data = "<user_data>", format = "application/json")]
-pub fn edit_user(conn: db::Conn, _auth: Auth, _user: User, user_id: i32, user_data: Json<UserEdit>)
-                 -> APIResponse {
-    let mut user = db::get_user(&conn, user_id)
-        .expect(&format!("Could not retrieve user from data {:?}", user_data));
+pub fn edit_user(
+    conn: db::Conn,
+    _auth: Auth,
+    _user: User,
+    user_id: i32,
+    user_data: Json<UserEdit>,
+) -> APIResponse {
+    let mut user = db::get_user(&conn, user_id).expect(&format!(
+        "Could not retrieve user from data {:?}",
+        user_data
+    ));
     user.email = user_data.email.clone();
     match db::update_user(&conn, &user) {
         Err(err) => {
-            let msg = format!("Error updating user {}: {}",
-                              user_id, err);
+            let msg = format!("Error updating user {}: {}", user_id, err);
             let resp_data = json!({
                 "status":"error",
                 "detail": msg
             });
             return bad_request().data(resp_data);
-        },
+        }
         Ok(_) => {
             eprintln!("Profile update successful for user {}", user_id);
         }

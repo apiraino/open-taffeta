@@ -2,16 +2,17 @@ extern crate open_taffeta_lib;
 
 extern crate reqwest;
 
-#[macro_use] extern crate serde_json;
+#[macro_use]
+extern crate serde_json;
 
-use reqwest::header::{AUTHORIZATION, HeaderValue};
+use reqwest::header::{HeaderValue, AUTHORIZATION};
 use reqwest::{Client, StatusCode};
 
 mod common;
 
 use crate::common::dbstate::DbState;
-use open_taffeta_lib::serializers::user::*;
 use open_taffeta_lib::models::*;
+use open_taffeta_lib::serializers::user::*;
 
 // TODO: have a look here
 // https://bitbucket.org/dorianpula/rookeries/src/master/tests/test_site_management.rs
@@ -19,8 +20,7 @@ use open_taffeta_lib::models::*;
 #[test]
 fn test_db() {
     let state = DbState::new();
-    state.create_user("josh@domain.com", true,
-                      open_taffeta_lib::models::ROLE_USER);
+    state.create_user("josh@domain.com", true, open_taffeta_lib::models::ROLE_USER);
 }
 
 #[test]
@@ -101,17 +101,21 @@ fn test_user_detail() {
     // check for 0 users
     state.assert_empty_users();
     // signup a user
-    let (user_data, _, token) = common::signup_user(&state.conn, "josh@domain.com", true, ROLE_USER);
+    let (user_data, _, token) =
+        common::signup_user(&state.conn, "josh@domain.com", true, ROLE_USER);
 
     // get user detail
     let q = format!("/users/{}", user_data.user.id);
     let mut response = client
         .get(api_base_uri.join(&q).unwrap())
-        .header(AUTHORIZATION, HeaderValue::from_str(token.as_str()).unwrap())
+        .header(
+            AUTHORIZATION,
+            HeaderValue::from_str(token.as_str()).unwrap(),
+        )
         .send()
         .unwrap();
     assert_eq!(response.status(), StatusCode::OK);
-    let resp_data : ResponseUserDetail = response.json().unwrap();
+    let resp_data: ResponseUserDetail = response.json().unwrap();
     assert_eq!(resp_data.user.email, "josh@domain.com");
 }
 
@@ -122,7 +126,7 @@ fn test_user_edit_profile() {
     let client = Client::new();
     state.assert_empty_users();
     // signup two user
-    let (user_data, _, token) = common::signup_user(&state.conn, "josh@domain.com", true, ROLE_USER);
+    let (_, _, token) = common::signup_user(&state.conn, "josh@domain.com", true, ROLE_USER);
     let (user_data2, _, _) = common::signup_user(&state.conn, "aimee@domain.com", true, ROLE_USER);
 
     // A user cannot touch another user profile
@@ -131,8 +135,14 @@ fn test_user_edit_profile() {
         "is_active": user_data2.user.is_active,
         "role": user_data2.user.role
     });
-    common::user_update(&client, &token, user_data2.user.id, &payload, StatusCode::UNAUTHORIZED)
-        .expect("Could not update user");
+    common::user_update(
+        &client,
+        &token,
+        user_data2.user.id,
+        &payload,
+        StatusCode::UNAUTHORIZED,
+    )
+    .expect("Could not update user");
 }
 
 #[test]
@@ -142,15 +152,22 @@ fn test_user_edit_profile_fields() {
     let client = Client::new();
     state.assert_empty_users();
     // signup two user
-    let (user_data, _, token) = common::signup_user(&state.conn, "josh@domain.com", true, ROLE_USER);
+    let (user_data, _, token) =
+        common::signup_user(&state.conn, "josh@domain.com", true, ROLE_USER);
 
     let payload = json!({
         "email": "my-new-email@domain.com",
         "is_active": "false",
         "role": "admin"
     });
-    common::user_update(&client, &token, user_data.user.id, &payload, StatusCode::NO_CONTENT)
-        .expect("Could not update user");
+    common::user_update(
+        &client,
+        &token,
+        user_data.user.id,
+        &payload,
+        StatusCode::NO_CONTENT,
+    )
+    .expect("Could not update user");
 
     let new_user = common::get_user_detail(&client, user_data.user.id, &token, StatusCode::OK)
         .expect("Could not retrieve user");
@@ -161,7 +178,6 @@ fn test_user_edit_profile_fields() {
     assert_eq!(new_user.user.role, ROLE_USER);
     assert_eq!(new_user.user.is_active, true);
 }
-
 
 #[test]
 fn test_user_list_not_allowed() {
@@ -175,9 +191,9 @@ fn test_user_list_not_allowed() {
 #[test]
 fn test_user_login() {
     let dbstate = DbState::new();
-    let api_base_uri = common::api_base_url();
     let client = Client::new();
-    let (user_data, pass, _) = common::signup_user(&dbstate.conn, "josh@domain.com", true, ROLE_USER);
+    let (user_data, pass, _) =
+        common::signup_user(&dbstate.conn, "josh@domain.com", true, ROLE_USER);
     let user_id = user_data.user.id;
 
     // login
@@ -232,41 +248,54 @@ fn test_user_login_generate_auth_token() {
 #[test]
 fn test_user_expire_auth_token() {
     let state = DbState::new();
-    let user = state.create_user("user@domain.com", false,
-                                      open_taffeta_lib::models::ROLE_USER);
+    let user = state.create_user(
+        "user@domain.com",
+        false,
+        open_taffeta_lib::models::ROLE_USER,
+    );
     let client = Client::new();
 
     // create a bunch of tokens
-    let expiry_date_far_expired = chrono::NaiveDateTime::parse_from_str("2015-09-05 23:56:04", "%Y-%m-%d %H:%M:%S").unwrap();
+    let expiry_date_far_expired =
+        chrono::NaiveDateTime::parse_from_str("2015-09-05 23:56:04", "%Y-%m-%d %H:%M:%S").unwrap();
     let expiry_date_close = chrono::NaiveDateTime::from_timestamp(
-        (chrono::Utc::now() + chrono::Duration::hours(1))
-            .timestamp(), 0);
+        (chrono::Utc::now() + chrono::Duration::hours(1)).timestamp(),
+        0,
+    );
     let expiry_date_just_expired = chrono::NaiveDateTime::from_timestamp(
-        (chrono::Utc::now() + chrono::Duration::hours(1) - chrono::Duration::seconds(1) )
-            .timestamp(), 0);
+        (chrono::Utc::now() + chrono::Duration::hours(1) - chrono::Duration::seconds(1))
+            .timestamp(),
+        0,
+    );
 
-    let mut auth = state.create_auth(user.id, &user.email, expiry_date_far_expired)
+    let mut auth = state
+        .create_auth(user.id, &user.email, expiry_date_far_expired)
         .expect("Could not create auth token");
     common::get_user_detail(&client, user.id, &auth.token, StatusCode::UNAUTHORIZED);
-    auth = state.create_auth(user.id, &user.email, expiry_date_close)
+    auth = state
+        .create_auth(user.id, &user.email, expiry_date_close)
         .expect("Could not create auth token");
     common::get_user_detail(&client, user.id, &auth.token, StatusCode::OK);
-    auth = state.create_auth(user.id, &user.email, expiry_date_just_expired)
+    auth = state
+        .create_auth(user.id, &user.email, expiry_date_just_expired)
         .expect("Could not create auth token");
     common::get_user_detail(&client, user.id, &auth.token, StatusCode::UNAUTHORIZED);
- }
+}
 
 #[test]
 fn test_user_login_trim_expired_auth_token() {
     let state = DbState::new();
     let client = Client::new();
-    let (user_data, password, _) = common::signup_user(
-        &state.conn, "josh@domain.com", true, ROLE_USER);
+    let (user_data, password, _) =
+        common::signup_user(&state.conn, "josh@domain.com", true, ROLE_USER);
     let user_id = user_data.user.id;
 
     // create an expired token
-    let expiry_date_expired = chrono::NaiveDateTime::parse_from_str("2017-09-05 23:56:04", "%Y-%m-%d %H:%M:%S").unwrap();
-    state.create_auth(user_id, &user_data.user.email, expiry_date_expired).unwrap();
+    let expiry_date_expired =
+        chrono::NaiveDateTime::parse_from_str("2017-09-05 23:56:04", "%Y-%m-%d %H:%M:%S").unwrap();
+    state
+        .create_auth(user_id, &user_data.user.email, expiry_date_expired)
+        .unwrap();
     assert_eq!(2, state.count_auth_token(user_data.user.id));
     let login_data = json!({
         "password": password,
@@ -279,12 +308,11 @@ fn test_user_login_trim_expired_auth_token() {
 
 #[test]
 fn test_user_login_rotate_auth_token() {
-
     let state = DbState::new();
     state.clean_tables();
     let client = Client::new();
-    let (user_data, password, first_token) = common::signup_user(
-        &state.conn, "josh@domain.com", true, ROLE_USER);
+    let (user_data, password, first_token) =
+        common::signup_user(&state.conn, "josh@domain.com", true, ROLE_USER);
     assert_eq!(state.count_auth_token(user_data.user.id), 1);
 
     // moar tokens generated
@@ -299,5 +327,8 @@ fn test_user_login_rotate_auth_token() {
     for _ in 0..25 {
         common::user_login(&client, &login_data, StatusCode::OK).unwrap();
     }
-    assert_eq!(state.count_auth_token(user_data.user.id), open_taffeta_lib::config::MAX_AUTH_TOKEN);
+    assert_eq!(
+        state.count_auth_token(user_data.user.id),
+        open_taffeta_lib::config::MAX_AUTH_TOKEN
+    );
 }

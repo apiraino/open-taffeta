@@ -2,24 +2,27 @@
 
 use std::io;
 
-use rocket::request::{Form, FormError, FormDataError};
-use rocket::response::{Redirect, NamedFile};
 use rocket::http::{Cookie, Cookies};
-use rocket_contrib::templates::Template;
+use rocket::request::{Form, FormDataError, FormError};
+use rocket::response::{NamedFile, Redirect};
 use rocket_contrib::json;
+use rocket_contrib::templates::Template;
 
 use serde_derive::Serialize;
 
-use crate::responses::{created, APIResponse};
-use crate::models::{Role, User, ROLE_ADMIN};
 use crate::auth::cookie::AdminCookie;
 use crate::db;
+use crate::models::{Role, User, ROLE_ADMIN};
+use crate::responses::{created, APIResponse};
+use crate::crypto;
+use crate::config;
 
 #[derive(Serialize)]
 struct TemplateAdminContext<'a> {
     title: &'a str,
-    users: Vec<(User,Role)>,
-    message: String
+    users: Vec<(User, Role)>,
+    message: &'a str,
+    current_user_id: i32
 }
 
 #[derive(Debug, FromForm)]
@@ -34,11 +37,12 @@ pub struct FormLogin {
     password: String,
 }
 
-fn generate_template(title: &str, user_role_list: Vec<(User,Role)>, message: String) -> Template {
+fn generate_template(title: &str, user_role_list: Vec<(User, Role)>, user_id: i32, message: &str) -> Template {
     let ctx = TemplateAdminContext {
         title: title,
         users: user_role_list,
-        message: message
+        message: message,
+        current_user_id: user_id
     };
     Template::render("admin_users_list", &ctx)
 }
@@ -107,27 +111,32 @@ pub fn admin_panel_redirect() -> Redirect {
 }
 
 #[post("/admin/edit_user", data = "<user_data>")]
-pub fn admin_panel_edit_user(conn: db::Conn, user_data: Result<Form<FormEditUser>, FormError>,
-                             _admin: AdminCookie) -> APIResponse {
-    let msg : &str;
+pub fn admin_panel_edit_user(
+    conn: db::Conn,
+    user_data: Result<Form<FormEditUser>, FormError>,
+    _admin: AdminCookie,
+) -> APIResponse {
+    let msg: &str;
     match user_data {
         Ok(form) => {
-            let mut user = db::get_user(&conn, form.user_id)
-                .expect(&format!("Could not retrieve user from form data {:?}", form));
+            let mut user = db::get_user(&conn, form.user_id).expect(&format!(
+                "Could not retrieve user from form data {:?}",
+                form
+            ));
             user.is_active = form.is_active;
             match db::update_user(&conn, &user) {
                 Ok(_) => msg = "User updated successfully",
-                Err(_) => msg = "User update failed"
+                Err(_) => msg = "User update failed",
             };
-        },
+        }
         Err(FormDataError::Io(_)) => {
             msg = "Form edit user has invalid UTF-8";
             eprintln!("{}", msg);
-        },
+        }
         Err(FormDataError::Malformed(f)) | Err(FormDataError::Parse(_, f)) => {
             eprintln!("Invalid form edit user received: {}", f);
             msg = "Invalid form edit user received";
         }
     }
-    created().data(json!({"detail": msg}))
+    created().data(json!({ "detail": msg }))
 }

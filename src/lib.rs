@@ -4,8 +4,10 @@
 #![feature(custom_attribute)]
 #![feature(proc_macro_hygiene, decl_macro)]
 
-#[macro_use] extern crate rocket;
-#[macro_use] extern crate diesel;
+#[macro_use]
+extern crate rocket;
+#[macro_use]
+extern crate diesel;
 
 // ensure macros are imported before
 // any modules that might use them
@@ -16,16 +18,16 @@ pub mod utils;
 
 pub mod db;
 // TODO: pub here is wrong, used only for tests
+pub mod auth;
 pub mod models;
-pub mod serializers;
 pub mod responses;
 pub mod routes;
 pub mod schema;
-pub mod auth;
+pub mod serializers;
 
 use rocket::config::Environment;
-use rocket_contrib::templates::Template;
 use rocket_contrib::serve::StaticFiles;
+use rocket_contrib::templates::Template;
 
 pub fn runner(_env: Environment) -> Result<rocket::Rocket, String> {
     let pool = db::init_pool();
@@ -42,7 +44,7 @@ pub fn runner(_env: Environment) -> Result<rocket::Rocket, String> {
         // mount the routes
         .mount(
             "/static",
-            StaticFiles::from(concat!(env!("STATIC_ASSETS_DIR"), "/static"))
+            StaticFiles::from(concat!(env!("STATIC_ASSETS_DIR"), "/static")),
         )
         .mount(
             "/",
