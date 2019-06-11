@@ -54,49 +54,50 @@ pub fn admin_panel_get_login_noauth() -> io::Result<NamedFile> {
 }
 
 #[post("/admin", data = "<sink>")]
-pub fn admin_panel_post_login(conn: db::Conn, sink: Result<Form<FormLogin>, FormError>, mut cookies: Cookies) -> Redirect {
+pub fn admin_panel_post_login(
+    conn: db::Conn,
+    sink: Result<Form<FormLogin>, FormError>,
+    mut cookies: Cookies,
+) -> Redirect {
+    let mut retval = Redirect::to("/admin");
     match sink {
         Ok(form) => {
-            match db::get_user_profile(&conn, &form.email) {
-                Ok(user) => {
-                    if user.role != ROLE_ADMIN || user.is_active == false {
-                        return Redirect::to("/admin");
+            let hashed_pwd = crypto::hash_password(form.password.as_bytes());
+            match db::get_active_user(&conn, &hashed_pwd, &form.email) {
+                Ok((user, role)) => {
+                    if role.name == ROLE_ADMIN {
+                        // TODO: create unique cookie content
+                        let cookie_value = format!("{}:{}", user.id, role.name);
+                        let cookie = Cookie::new(config::COOKIE_NAME_AUTH_STATUS, cookie_value);
+                        // TODO: how does building a cookie work?
+                        // let cookie_b = Cookie::build("auth_status_pvt", "OK")
+                        //     .path("/admin")
+                        //     .secure(true)
+                        //     .finish();
+                        cookies.add_private(cookie);
+                        retval = Redirect::to("/admin/users");
                     }
                 },
-                Err(err) => {
-                    eprintln!("{}", &format!(
-                        "Could not retrieve valid admin with email {:?}: {}", form.email, err)
-                    );
-                    return Redirect::to("/admin");
+                Err(_) => {
+                    // eprintln!(">>> query failed {:?}", err);
                 }
-            }
-
-            // TODO: create unique cookie content
-            let cookie = Cookie::new("auth_status", "authorized!");
-            // TODO: how does buliding a cookie work?
-            // let cookie_b = Cookie::build("auth_status_pvt", "OK")
-            //     .path("/admin")
-            //     .secure(true)
-            //     .finish();
-            cookies.add_private(cookie);
-            return Redirect::to("/admin/users");
+            };
         },
         Err(FormDataError::Io(_)) => {
             eprintln!("Form input was invalid UTF-8.");
-        }
+        },
         Err(FormDataError::Malformed(f)) | Err(FormDataError::Parse(_, f)) => {
             eprintln!("Invalid form input: {}", f);
         }
     }
-    Redirect::to("/admin")
+    retval
 }
 
 #[get("/admin/users")]
-pub fn admin_panel(conn: db::Conn, _admin: AdminCookie)  -> Template {
-    let users = db::get_user_list(&conn, false)
-        .expect("Could not get users list");
+pub fn admin_panel(conn: db::Conn, admin: AdminCookie) -> Template {
+    let users = db::get_user_list(&conn, false).expect("Could not get users list");
     eprintln!("Found {} users", users.len());
-    generate_template("User List", users, "".to_owned())
+    generate_template("User List", users, admin.user_id, "Click a checkbox to update users")
 }
 
 #[get("/admin/users", rank = 2)]

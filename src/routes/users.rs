@@ -103,30 +103,62 @@ pub fn get_user(conn: db::Conn, _auth: Auth, user_id: i32) -> APIResponse {
             });
             bad_request().data(resp_data)
         }
-        Ok((user, role)) =>  {
-            ok().data(json!({"user": utils::attach_role_to_user(&user, &role)}))
-        }
+        Ok((user, role)) => ok().data(json!({ "user": utils::attach_role_to_user(&user, &role) })),
     }
 }
 
 #[post("/login", data = "<user_data>", format = "application/json")]
 pub fn login_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIResponse {
-    let logmein = UserLoginSignup {
-        password: user_data.password.clone(),
-        email: user_data.email.clone()
+    let mut logmein = UserLoginSignup {
+        password: user_data.password,
+        email: user_data.email,
     };
-
-    let err_msg = format!("error retrieving active user with email={}", logmein.email);
 
     // examples
     // https://github.com/ayourtch/diesel-join-example/blob/master/src/lib.rs
     // TODO: use `.select((tbl1::fld1, tbl2::fld2))` to get only some fields
+    // let hashed_pwd = crypto::hash_password(user_data.password.as_bytes());
+    let hashed_pwd = crypto::hash_password(user_data.password.as_bytes());
+    logmein.password = &hashed_pwd;
+
+    // TODO: refactor all this like in the admin login
+    match db::get_user_profile(&conn, &logmein.email) {
+        Ok(user) => {
+            if user.is_active == false {
+                let resp_data = json!({
+                    "status": "error",
+                    "detail": format!("Could not find user active for email {}", logmein.email)
+                });
+                // TODO: this 401 could simply return no body
+                return unauthorized().data(json!(resp_data));
+            }
+        }
+        Err(err) => {
+            eprintln!(
+                "{}",
+                &format!(
+                    "Could not retrieve valid user with email {:?}: {}",
+                    logmein.email, err
+                )
+            );
+            let resp_data = json!({
+                "status": "error",
+                "detail": format!("Could not find user for email {}", logmein.email)
+            });
+            // TODO: this 401 could simply return no body
+            return unauthorized().data(json!(resp_data));
+        }
+    };
+
     let user_rs : Vec<(User, Role)> = users::table
         .inner_join(roles::table)
         .filter(users::is_active.eq(true))
         .filter(users::email.eq(&logmein.email))
+        .filter(users::password.eq(&logmein.password))
         .load(&*conn)
-        .expect(&err_msg);
+        .expect(
+            &format!("error retrieving active user with email={}", logmein.email)
+        );
 
     match user_rs.len() {
         1 => {
@@ -144,17 +176,25 @@ pub fn login_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIRespon
             let user_data = utils::attach_role_to_user(&user, &user_role);
             let resp_data = ResponseLoginSignup {
                 auth: user_auth,
-                user: user_data
+                user: user_data,
             };
             ok().data(json!(resp_data))
-        },
+        }
         _ => {
+            eprintln!(
+                "{}",
+                format!(
+                    "Wrong records count found ({}) for email={}",
+                    user_rs.len(),
+                    logmein.email
+                )
+            );
             let resp_data = json!({
                 "status": "error",
-                "detail": format!("Wrong records count found ({}) for email={}",
-                                  user_rs.len(), logmein.email)
+                "detail": format!("Could not find user for email {}", logmein.email)
             });
-            bad_request().data(resp_data)
+            // TODO: this 401 could simply return no body
+            unauthorized().data(json!(resp_data))
         }
     }
 }

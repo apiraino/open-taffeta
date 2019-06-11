@@ -111,9 +111,6 @@ pub fn get_user_profile(conn: &SqliteConnection, email: &str)
             return Err(err_msg);
         }
         Ok((user, role)) =>  {
-            // if let Ok(user) = utils::attach_role_to_user(&user, &role) {
-            //     // ok
-            // }
             let u = utils::attach_role_to_user(&user, &role);
             Ok(u)
         }

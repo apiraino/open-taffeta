@@ -118,5 +118,4 @@ impl User {
         }
         true
     }
-
 }
