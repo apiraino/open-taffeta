@@ -139,45 +139,66 @@ pub fn get_user_list(client: &Client, token: &str, params: &str, expected_status
         let err_msg;
         if response.status() != StatusCode::OK {
             eprintln!("{:?}", response);
-            let r : ResponseError = response.json()
-                .expect("Error opening user list response");
+            let r: ResponseError = response.json().expect("Error opening user list response");
             err_msg = format!(
                 "Error in get user list: expected {}, got {}: {:?}",
-                expected_status_code, response.status(),
-                r.detail);
+                expected_status_code,
+                response.status(),
+                r.detail
+            );
         } else {
             err_msg = format!(
                 "Error in get user list: expected {}, got {}",
-                expected_status_code, response.status());
+                expected_status_code,
+                response.status()
+            );
         }
         panic!(err_msg);
     }
     if response.status() == StatusCode::OK {
-        let r : ResponseListUser = response.json()
-            .expect("Error opening user list response");
+        let r: ResponseListUser = response.json().expect("Error opening user list response");
         return Some(r);
     }
     None
 }
 
-pub fn user_login(client: &Client, login_data: &Value, expected_status_code: StatusCode)
-                  -> Option<ResponseLoginSignup> {
+pub fn user_login(
+    client: &Client,
+    login_data: &Value,
+    expected_status_code: StatusCode,
+) -> Result<ResponseLoginSignup, String> {
     let api_base_uri = api_base_url();
     let mut response = client
         .post(api_base_uri.join("/login").unwrap())
         .json(&login_data)
         .send()
         .expect("Login failed");
-    assert_eq!(response.status(), expected_status_code);
-    if response.status() == StatusCode::OK {
-        let resp_data: ResponseLoginSignup = response.json().expect("Failed to unwrap the login response");
-        return Some(resp_data);
+    if response.status() != expected_status_code {
+        let err_msg = format!(
+            "Error in user login: expected {}, got {}: {:?}",
+            expected_status_code,
+            response.status(),
+            response
+        );
+        eprintln!("{}", err_msg);
+        return Err(err_msg);
+    } else {
+        if response.status() == StatusCode::OK {
+            let resp_data: ResponseLoginSignup = response.json().expect("Failed to parse response");
+            return Ok(resp_data);
+        }
+        return Err(format!("Request failed as expected: {:?}", response));
     }
-    None
+    Err(format!("Unmanaged error: {:?}", response))
 }
 
-pub fn user_update(client: &Client, token: &str, user_id: i32, payload: &Value, expected_status_code: StatusCode)
-                   -> Result<(), String> {
+pub fn user_update(
+    client: &Client,
+    token: &str,
+    user_id: i32,
+    payload: &Value,
+    expected_status_code: StatusCode,
+) -> Result<(), String> {
     let url = api_base_url().join(&format!("/user/{}", user_id)).unwrap();
     let mut response = client
         .put(url)

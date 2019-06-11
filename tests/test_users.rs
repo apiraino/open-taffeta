@@ -185,24 +185,35 @@ fn test_user_login() {
         "password": pass,
         "email": user_data.user.email
     });
-    let mut response = client
-        .post(api_base_uri.join("login").unwrap())
-        .json(&login_data)
-        .send()
-        .expect("Login failed");
-    assert_eq!(response.status(), StatusCode::OK);
-    let resp_data: ResponseLoginSignup = response.json().unwrap();
+    let res = common::user_login(&client, &login_data, StatusCode::OK);
+    assert_eq!(true, res.is_ok());
+    let resp_data: ResponseLoginSignup = res.unwrap();
     assert_eq!(resp_data.user.id, user_id);
     assert_eq!(resp_data.user.is_active, true);
     assert_eq!(resp_data.user.role, "user");
 }
 
 #[test]
+fn test_user_login_failed() {
+    let dbstate = DbState::new();
+    let client = Client::new();
+    let (user_data, _, _) = common::signup_user(&dbstate.conn, "josh@domain.com", true, ROLE_USER);
+
+    // login
+    let login_data = json!({
+        "password": "hey",
+        "email": user_data.user.email
+    });
+    let res = common::user_login(&client, &login_data, StatusCode::UNAUTHORIZED);
+    assert_eq!(true, res.is_err(), "{:?}", res)
+}
+
+#[test]
 fn test_user_login_generate_auth_token() {
     let state = DbState::new();
     let client = Client::new();
-    let (user_data, password, token) = common::signup_user(
-        &state.conn, "josh@domain.com", true, ROLE_USER);
+    let (user_data, password, token) =
+        common::signup_user(&state.conn, "josh@domain.com", true, ROLE_USER);
     let user_id = user_data.user.id;
 
     let login_data = json!({
@@ -211,7 +222,9 @@ fn test_user_login_generate_auth_token() {
     });
 
     // login again, token returned should be different
-    let resp_data = common::user_login(&client, &login_data, StatusCode::OK).unwrap();
+    let res = common::user_login(&client, &login_data, StatusCode::OK);
+    assert_eq!(true, res.is_ok());
+    let resp_data: ResponseLoginSignup = res.unwrap();
     assert_eq!(resp_data.auth.user_id, user_id);
     assert_ne!(resp_data.auth.token, token);
 }

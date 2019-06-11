@@ -132,10 +132,36 @@ fn test_door_inactive_admin_unauthorized() {
 }
 
 #[test]
+fn test_door_inactive_user_cannot_buzz_door() {
+    let state = DbState::new();
+    let (_, _, token_admin) =
+        common::signup_user(&state.conn, "admin@domain.com", true, ROLE_ADMIN);
+    let (_, _, token_user) = common::signup_user(&state.conn, "user@domain.com", false, ROLE_USER);
+    let client = Client::new();
+    let payload = json!({
+        "name": "door123",
+        "address": "https://buzzer.somewhere.de",
+        "buzzer_url": "http://111.222.111.222"
+    });
+    let res = common::create_door(&client, &payload, &token_admin, StatusCode::CREATED);
+    assert!(true, res.is_ok());
+    let door_data = res.unwrap();
+
+    let res = common::knock_door(
+        &client,
+        door_data.door.id,
+        &token_user,
+        StatusCode::UNAUTHORIZED,
+    );
+    assert!(true, res.is_ok());
+}
+
+#[test]
 fn test_door_user() {
     let state = DbState::new();
     let (_, _, token_user) = common::signup_user(&state.conn, "josh@domain.com", true, ROLE_USER);
-    let (_, _, token_admin) = common::signup_user(&state.conn, "admin@domain.com", true, ROLE_ADMIN);
+    let (_, _, token_admin) =
+        common::signup_user(&state.conn, "admin@domain.com", true, ROLE_ADMIN);
     let client = Client::new();
     let payload = json!({
         "name": "door123",
