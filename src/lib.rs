@@ -25,10 +25,10 @@ pub mod routes;
 pub mod schema;
 pub mod serializers;
 
-use std::env;
 use rocket::config::Environment;
 use rocket_contrib::serve::StaticFiles;
 use rocket_contrib::templates::Template;
+use std::env;
 
 pub fn runner(_env: Environment) -> Result<rocket::Rocket, String> {
     let pool = db::init_pool();
@@ -41,7 +41,8 @@ pub fn runner(_env: Environment) -> Result<rocket::Rocket, String> {
     //     .port(8888)
     //     .finalize().unwrap();
 
-    let static_assets_dir = env::var("STATIC_ASSETS_DIR").expect("Missing STATIC_ASSETS_DIR env var");
+    let static_assets_dir =
+        env::var("STATIC_ASSETS_DIR").expect("Missing STATIC_ASSETS_DIR env var");
     let rocket = rocket::ignite()
         // mount the routes
         .mount("/static", StaticFiles::from(static_assets_dir))
