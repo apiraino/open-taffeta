@@ -1,7 +1,7 @@
 [package]
 authors = ["apiraino <apiraino@users.noreply.github.com>", "kkom <kkom@users.noreply.github.com>"]
 name = "open-taffeta"
-version = "0.4.0"
+version = "0.4.1"
 edition = "2018"
 description = "Self-hosted website controlling access to a building."
 readme = "README"
