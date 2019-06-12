@@ -20,7 +20,7 @@ A dark time where code was in heavy influx and black metal ruled the world
   - `/users` (list users)
   - `/admin` (admin backoffice)
   - `/doors` (list doors)
-- Admin backoffice (https://door.cwrkng.de/admin) to enable/disable users (only accessible to users with role "admin")
+- Admin backoffice (https://endpoint.domain.com/admin) to enable/disable users (only accessible to users with role "admin")
 
 ### 0.4.1
 
