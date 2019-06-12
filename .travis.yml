@@ -2,7 +2,7 @@ dist: xenial
 language: rust
 
 rust:
-  - nightly-2019-06-10
+  - nightly-2019-06-12
 
 cache: cargo
 env:
