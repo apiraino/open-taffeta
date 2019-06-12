@@ -242,7 +242,7 @@ pub fn signup_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIRespo
     }
 }
 
-#[put("/user/<user_id>", data = "<user_data>", format = "application/json")]
+#[put("/users/<user_id>", data = "<user_data>", format = "application/json")]
 pub fn edit_user(
     conn: db::Conn,
     _auth: Auth,

@@ -205,8 +205,8 @@ pub fn user_update(
     payload: &Value,
     expected_status_code: StatusCode,
 ) -> Result<(), String> {
-    let url = api_base_url().join(&format!("/user/{}", user_id)).unwrap();
-    let response = client
+    let url = api_base_url().join(&format!("/users/{}", user_id)).unwrap();
+    let mut response = client
         .put(url)
         .header(AUTHORIZATION, HeaderValue::from_str(token).unwrap())
         .json(payload)
@@ -217,7 +217,7 @@ pub fn user_update(
             "Error in put update user: expected {}, got {}: {:?}",
             expected_status_code,
             response.status(),
-            response
+            response.text()
         );
         eprintln!("{}", err_msg);
         return Err("Could not update user".to_owned());
