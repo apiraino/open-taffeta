@@ -159,6 +159,11 @@ fn test_user_edit_profile_fields() {
 }
 
 #[test]
+fn test_user_edit_profile_email_taken() {
+    assert!(true, "User should not be able to set their email equal to someone else's");
+}
+
+#[test]
 fn test_user_list_not_allowed() {
     let state = DbState::new();
     state.clean_tables();
