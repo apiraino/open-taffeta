@@ -3,7 +3,7 @@ address = "localhost"
 port = 8000
 workers = 2
 log = "normal"
-secret_key = "/YtLbCM1Hh2UDkTjYHcwnerW7gjsGx5ggEyCyAfFc5Y="
+# secret_key = "123456"
 limits = { forms = 32768 }
 # can only use this with a State in routes
 # https://rocket.rs/guide/configuration/#extras
@@ -14,5 +14,5 @@ address = "0.0.0.0"
 port = 8000
 workers = 4
 log = "critical"
-secret_key = "7SRnhdV1wotW8UhC20JXzYQdImtmHyzGqRLWYu6p4ik="
+# secret_key = "aaabbbcccddd..."
 limits = { forms = 32768 }
