@@ -168,6 +168,7 @@ pub fn buzz_door(conn: db::Conn, _auth: Auth, _user: User, door_id: i32) -> APIR
     match door_res {
         Ok(door_data) => {
             // TODO: make these async
+            // TODO: manage errors and return a 40x
             let challenge =
                 get_challenge(door_data.buzzer_url.clone()).expect("Failed to get the challenge");
 
