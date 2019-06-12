@@ -19,7 +19,7 @@ fn main() {
     let env = match deploy_env.as_ref() {
         "prod" => Environment::Production,
         "dev" => Environment::Development,
-        _ => Environment::Development
+        _ => Environment::Development,
     };
 
     // TODO: fix logging

@@ -1,7 +1,7 @@
-use serde_derive::Deserialize;
 use crate::models::Door;
+use serde_derive::Deserialize;
 
 #[derive(Deserialize, Debug)]
 pub struct ResponseDoorCreated {
-    pub door: Door
+    pub door: Door,
 }

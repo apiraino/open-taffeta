@@ -49,80 +49,47 @@ impl<'r> Responder<'r> for APIResponse {
 }
 
 pub fn ok() -> APIResponse {
-    APIResponse {
-        data: json!(null),
-        status: Status::Ok,
-    }
+    APIResponse { data: json!(null), status: Status::Ok }
 }
 
 pub fn created() -> APIResponse {
-    APIResponse {
-        data: json!(null),
-        status: Status::Created,
-    }
+    APIResponse { data: json!(null), status: Status::Created }
 }
 
 pub fn accepted() -> APIResponse {
-    APIResponse {
-        data: json!(null),
-        status: Status::Accepted,
-    }
+    APIResponse { data: json!(null), status: Status::Accepted }
 }
 
 pub fn no_content() -> APIResponse {
-    APIResponse {
-        data: json!(null),
-        status: Status::NoContent,
-    }
+    APIResponse { data: json!(null), status: Status::NoContent }
 }
 
 pub fn bad_request() -> APIResponse {
-    APIResponse {
-        data: json!({"detail": "Bad Request"}),
-        status: Status::BadRequest,
-    }
+    APIResponse { data: json!({"detail": "Bad Request"}), status: Status::BadRequest }
 }
 
 pub fn unauthorized() -> APIResponse {
-    APIResponse {
-        data: json!({"detail": "Unauthorized"}),
-        status: Status::Unauthorized,
-    }
+    APIResponse { data: json!({"detail": "Unauthorized"}), status: Status::Unauthorized }
 }
 
 pub fn forbidden() -> APIResponse {
-    APIResponse {
-        data: json!({"detail": "Forbidden"}),
-        status: Status::Forbidden,
-    }
+    APIResponse { data: json!({"detail": "Forbidden"}), status: Status::Forbidden }
 }
 
 pub fn not_found() -> APIResponse {
-    APIResponse {
-        data: json!({"detail": "Not Found"}),
-        status: Status::NotFound,
-    }
+    APIResponse { data: json!({"detail": "Not Found"}), status: Status::NotFound }
 }
 
 pub fn method_not_allowed() -> APIResponse {
-    APIResponse {
-        data: json!({"detail": "Method Not Allowed"}),
-        status: Status::MethodNotAllowed,
-    }
+    APIResponse { data: json!({"detail": "Method Not Allowed"}), status: Status::MethodNotAllowed }
 }
 
 pub fn conflict() -> APIResponse {
-    APIResponse {
-        data: json!({"detail": "Conflict"}),
-        status: Status::Conflict,
-    }
+    APIResponse { data: json!({"detail": "Conflict"}), status: Status::Conflict }
 }
 
 pub fn unprocessable_entity(errors: JsonValue) -> APIResponse {
-    APIResponse {
-        data: json!({ "detail": errors }),
-        status: Status::UnprocessableEntity,
-    }
+    APIResponse { data: json!({ "detail": errors }), status: Status::UnprocessableEntity }
 }
 
 pub fn internal_server_error() -> APIResponse {

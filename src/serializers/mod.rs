@@ -1,2 +1,2 @@
-pub mod users;
 pub mod doors;
+pub mod user;

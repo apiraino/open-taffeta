@@ -6,7 +6,7 @@ use rocket_contrib::json::JsonValue;
 pub fn not_found() -> JsonValue {
     json!({
         "status": "error",
-        "reason": "Resource was not found."
+        "detail": "Resource was not found."
     })
 }
 
@@ -14,7 +14,15 @@ pub fn not_found() -> JsonValue {
 pub fn not_authorized() -> JsonValue {
     json!({
         "status": "error",
-        "reason": "Not authorized."
+        "detail": "Not authorized"
+    })
+}
+
+#[catch(422)]
+pub fn unprocessable_entity() -> JsonValue {
+    json!({
+        "status": "error",
+        "detail": "Unprocessable Entity"
     })
 }
 

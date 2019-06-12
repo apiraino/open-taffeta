@@ -2,11 +2,11 @@ dist: xenial
 language: rust
 
 rust:
-  - nightly-2019-05-29
+  - nightly-2019-06-12
 
 cache: cargo
 env:
-  - DATABASE_URL=test_app.db TEST_SERVER=http://localhost:8000 ROCKET_ENV=dev SECRET=123456 RUST_TEST_THREADS=1
+  - DATABASE_URL=test_app.db TEST_SERVER=http://localhost:8000 ROCKET_ENV=dev SECRET=123456 RUST_TEST_THREADS=1 STATIC_ASSETS_DIR=/home/travis/apiraino/open-taffeta/static
 
 before_script:
   - rustup component add rust-src

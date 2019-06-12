@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>{{ title }}</title>
+    <link rel="shortcut icon" href="/static/favicon.ico">
+
+    <script>
+      // TODO: it's 2019, use fetch()
+      function send(cb) {
+          // console.log('sending id=' + cb.id + ' checked=' + cb.checked);
+          var http = new XMLHttpRequest();
+          var url = '/admin/edit_user';
+          var params = 'user_id=' + cb.id + '&is_active=' + cb.checked;
+          http.open('POST', url, true);
+          http.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+          http.onreadystatechange = function() {
+              if (http.readyState == 4 && http.status == 201) {
+                  console.debug(http.responseText);
+                  update_result(JSON.parse(http.responseText)['detail']);
+              }
+          }
+          http.send(params);
+      }
+
+      function update_result(content) {
+          var container = document.getElementById("message");
+          container.innerHTML = content;
+      }
+    </script>
+
+    <style>
+      table {
+          padding: 10px;
+          text-align: left;
+      }
+
+      th {
+          text-align: center;
+      }
+
+      td {
+          padding: 5px;
+          border: 1px solid black;
+          vertical-align: middle;
+          text-align: center;
+      }
+    </style>
+
+  </head>
+  <body>
+    <h1 style="text-align:center;">{{ title }}</h1>
+    <h3 style="text-align:center;"><div id="message">{{ message }}</div></h3>
+    <form action="/admin/edit_user" method="post" accept-charset="utf-8">
+      <table>
+        <tr>
+          <th>Email</th><th>Role</th><th>Is active?</th>
+        </tr>
+        {% for user_role in users %}
+        <tr>
+          <td>
+            <a href="#">{{ user_role.0.email }}</a>
+            <input type="hidden" name="user_id" value="{{ user_role.0.id }}" />
+          </td>
+          <td>
+            {{ user_role.1.name }}
+          </td>
+          <td>
+            <input type="checkbox" id="{{user_role.0.id}}"
+                   {{ user_role.0.is_active | as_str | replace(from="true", to="checked") }}
+                   {% if user_role.0.id == current_user_id %}
+                   readonly="readonly"
+                   {% endif %}
+                   onclick="send(this);" />
+          </td>
+        </tr>
+        {% endfor %}
+      </table>
+    </form>
+  </body>
+</html>
