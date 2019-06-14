@@ -26,7 +26,7 @@ pub struct Auth {
     pub token: String,
 }
 
-#[derive(Queryable, Debug, Clone)]
+#[derive(Queryable, Debug)]
 pub struct AuthQ {
     pub id: i32,
     pub user_id: i32,

@@ -1,7 +1,7 @@
 extern crate crypto_hash;
 use crypto_hash::{hex_digest, Algorithm};
 
-pub fn calculate_hash(_code: String) -> String {
+pub fn calculate_hash<'a>(_code: &'a str) -> String {
     String::from("1234567890qwerty")
 }
 
@@ -24,7 +24,7 @@ fn test_calculate_code() {
     eprintln!();
     for (test_val, exp_val) in &values {
         // let code = test_val.to_string();
-        let res = calculate_hash(test_val.to_string());
+        let res = calculate_hash(test_val);
         assert_eq!(exp_val, &res);
     }
     eprintln!("---");

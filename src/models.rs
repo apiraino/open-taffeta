@@ -12,7 +12,6 @@ use serde_derive::{Deserialize, Serialize};
 
 #[derive(
     Queryable,
-    Clone,
     Serialize,
     Deserialize,
     Debug,

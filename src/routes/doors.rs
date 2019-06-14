@@ -24,11 +24,11 @@ use crate::schema::doors::dsl::*;
 
 #[derive(Serialize, Deserialize, Validate, Debug, Insertable)]
 #[table_name = "doors"]
-pub struct NewDoor {
+pub struct NewDoor<'a> {
     #[validate(length(min = "4"))]
-    name: String,
-    address: String,
-    buzzer_url: String,
+    name: &'a str,
+    address: &'a str,
+    buzzer_url: &'a str,
 }
 
 #[derive(Deserialize, Debug)]
@@ -39,9 +39,8 @@ struct ResponseData {
 
 fn buzz(challenge: String, door_buzzer_url: String) -> Result<String, String> {
     // TODO make it async
-    // TODO manage buzz1 (load timetable.txt) and buzz2
     let client = Client::new();
-    let code = calculate_hash(challenge.clone());
+    let code = calculate_hash(&challenge);
     let s = format!("{}/buzz1/{}", door_buzzer_url, code.to_string());
     let url = Url::parse(&s).unwrap();
     let data = json!({ "message": challenge });
@@ -66,7 +65,7 @@ fn buzz(challenge: String, door_buzzer_url: String) -> Result<String, String> {
     Ok("success".to_string())
 }
 
-pub fn get_challenge(door_buzzer_url: String) -> Result<String, String> {
+pub fn get_challenge<'a>(door_buzzer_url: &'a str) -> Result<String, String> {
     // TODO make it async
     let client = Client::new();
     let s = format!("{}/challenge", door_buzzer_url);
@@ -103,9 +102,9 @@ pub fn create_door(
     door_data: Json<NewDoor>,
 ) -> APIResponse {
     let new_door = NewDoor {
-        name: door_data.name.clone(),
-        address: door_data.address.clone(),
-        buzzer_url: door_data.buzzer_url.clone(),
+        name: door_data.name,
+        address: door_data.address,
+        buzzer_url: door_data.buzzer_url
     };
 
     // TODO: also try `get_result()` here
@@ -170,7 +169,7 @@ pub fn buzz_door(conn: db::Conn, _auth: Auth, _user: User, door_id: i32) -> APIR
             // TODO: make these async
             // TODO: manage errors and return a 40x
             let challenge =
-                get_challenge(door_data.buzzer_url.clone()).expect("Failed to get the challenge");
+                get_challenge(&door_data.buzzer_url).expect("Failed to get the challenge");
 
             let buzz_result = buzz(challenge, door_data.buzzer_url).expect("Could not buzz door");
             eprintln!(">>> Buzz result is: {}", buzz_result);
@@ -208,9 +207,9 @@ mod tests {
 
     fn add_test_door(conn: &SqliteConnection) -> Door {
         let new_door = NewDoor {
-            name: String::from("test-door"),
-            address: String::from("https://buzzer.whatever.de"),
-            buzzer_url: String::from("http://111.222.333.444"),
+            name: "test-door",
+            address: "https://buzzer.whatever.de",
+            buzzer_url: "http://111.222.333.444",
         };
 
         let insert_res = diesel::insert_into(doors).values(&new_door).execute(conn);
