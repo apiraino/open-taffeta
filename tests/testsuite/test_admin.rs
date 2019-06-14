@@ -1,12 +1,14 @@
 extern crate open_taffeta_lib;
 extern crate reqwest;
-#[macro_use]
-extern crate serde_json;
-use crate::common::dbstate::DbState;
+// #[macro_use]
+// extern crate serde_json;
+
 use open_taffeta_lib::models::*;
 use open_taffeta_lib::serializers::user::*;
 use reqwest::{Client, StatusCode};
-mod common;
+
+use cratetests::common;
+use cratetests::common::dbstate::DbState;
 
 #[test]
 fn test_user_turns_into_admin() {

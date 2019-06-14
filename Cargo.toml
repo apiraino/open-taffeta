@@ -51,6 +51,13 @@ assets = [
 name = "open_taffeta_lib"
 path = "src/lib.rs"
 
+[[test]]
+name = "testsuite"
+path = "tests/testsuite/lib.rs"
+
+[dev-dependencies]
+cratetests = { path = "tests/testsuite/cratetests", version = "0.1" }
+
 [dependencies]
 rocket = { version = "0.4.1", features = ["tls"] }
 rocket_cors = "0.5.0"

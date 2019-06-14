@@ -2,15 +2,15 @@ extern crate open_taffeta_lib;
 
 extern crate reqwest;
 
-#[macro_use]
-extern crate serde_json;
+// #[macro_use]
+// extern crate serde_json;
 
 use reqwest::header::{HeaderValue, AUTHORIZATION};
 use reqwest::{Client, StatusCode};
 
-mod common;
+use cratetests::common;
 
-use crate::common::dbstate::DbState;
+use cratetests::common::dbstate::DbState;
 use open_taffeta_lib::models::*;
 use open_taffeta_lib::serializers::user::*;
 

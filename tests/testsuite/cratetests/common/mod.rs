@@ -10,6 +10,7 @@ use reqwest::{Client, StatusCode, Url};
 // exported from Rocket 0.4 get compiler confused (?)
 // use rocket_contrib::json::JsonValue;
 use serde_json::Value;
+use serde_json::json;
 
 use diesel::sqlite::SqliteConnection;
 

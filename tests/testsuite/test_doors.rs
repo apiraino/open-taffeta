@@ -1,14 +1,16 @@
 use std::{thread, time};
 extern crate open_taffeta_lib;
 extern crate reqwest;
-#[macro_use]
-extern crate serde_json;
+// #[macro_use]
+// extern crate serde_json;
 
-use crate::common::dbstate::DbState;
+use cratetests::common::dbstate::DbState;
+use cratetests::common;
+
 use open_taffeta_lib::models::*;
+
 use reqwest::header::{HeaderValue, AUTHORIZATION};
 use reqwest::{Client, StatusCode};
-mod common;
 
 // TODO: have a look here
 // https://bitbucket.org/dorianpula/rookeries/src/master/tests/test_site_management.rs
