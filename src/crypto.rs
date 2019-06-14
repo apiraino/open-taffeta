@@ -24,7 +24,7 @@ fn test_calculate_code() {
     eprintln!();
     for (test_val, exp_val) in &values {
         // let code = test_val.to_string();
-        let res = calculate_hash(test_val.to_string());
+        let res = calculate_hash(test_val);
         assert_eq!(exp_val, &res);
     }
     eprintln!("---");

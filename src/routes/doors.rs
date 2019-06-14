@@ -39,7 +39,6 @@ struct ResponseData {
 
 fn buzz(challenge: String, door_buzzer_url: String) -> Result<String, String> {
     // TODO make it async
-    // TODO manage buzz1 (load timetable.txt) and buzz2
     let client = Client::new();
     let code = calculate_hash(&challenge);
     let s = format!("{}/buzz1/{}", door_buzzer_url, code.to_string());
