@@ -1,7 +1,7 @@
 extern crate crypto_hash;
 use crypto_hash::{hex_digest, Algorithm};
 
-pub fn calculate_hash(_code: String) -> String {
+pub fn calculate_hash<'a>(_code: &'a str) -> String {
     String::from("1234567890qwerty")
 }
 
