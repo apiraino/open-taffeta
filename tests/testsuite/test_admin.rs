@@ -1,7 +1,5 @@
 extern crate open_taffeta_lib;
 extern crate reqwest;
-// #[macro_use]
-// extern crate serde_json;
 
 use open_taffeta_lib::models::*;
 use open_taffeta_lib::serializers::user::*;

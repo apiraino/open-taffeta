@@ -26,8 +26,8 @@ pub struct ResponseLoginSignup {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct UserEdit {
-    pub email: String,
+pub struct UserEdit<'a> {
+    pub email: &'a str,
 }
 
 #[derive(Deserialize, Debug)]

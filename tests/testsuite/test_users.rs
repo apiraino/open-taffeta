@@ -1,21 +1,14 @@
 extern crate open_taffeta_lib;
-
 extern crate reqwest;
-
-// #[macro_use]
-// extern crate serde_json;
 
 use reqwest::header::{HeaderValue, AUTHORIZATION};
 use reqwest::{Client, StatusCode};
 
 use cratetests::common;
-
 use cratetests::common::dbstate::DbState;
+
 use open_taffeta_lib::models::*;
 use open_taffeta_lib::serializers::user::*;
-
-// TODO: have a look here
-// https://bitbucket.org/dorianpula/rookeries/src/master/tests/test_site_management.rs
 
 #[test]
 fn test_db() {

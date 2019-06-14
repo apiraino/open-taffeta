@@ -252,7 +252,7 @@ pub fn edit_user(
 ) -> APIResponse {
     let mut user = db::get_user(&conn, user_id)
         .expect(&format!("Could not retrieve user from data {:?}", user_data));
-    user.email = user_data.email.clone();
+    user.email = user_data.email.to_owned();
     match db::update_user(&conn, &user) {
         Err(err) => {
             let msg = format!("Error updating user {}: {}", user_id, err);
