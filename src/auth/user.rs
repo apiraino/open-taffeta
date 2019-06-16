@@ -1,3 +1,4 @@
+use log::{error, warn};
 use rocket::http::Status;
 use rocket::request::{self, FromRequest, Request};
 use rocket::{Outcome, State};
@@ -22,7 +23,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
         let conn = match pool.get() {
             Ok(conn) => conn,
             Err(_) => {
-                eprintln!("Cannot get Db socket conn from pool");
+                error!("Cannot get Db socket conn from pool");
                 return Outcome::Failure((Status::Unauthorized, RoleError::ServerError));
             }
         };
@@ -43,7 +44,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
                 Outcome::Success(user)
             }
             Err(err) => {
-                eprintln!("{}", &format!("Failed to retrieve user profile: {}", err));
+                warn!("{}", &format!("Failed to retrieve user profile: {}", err));
                 Outcome::Failure((Status::Unauthorized, RoleError::ServerError))
             }
         }

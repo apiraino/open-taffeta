@@ -1,3 +1,4 @@
+use log::{error, warn};
 use rocket::http::Status;
 use rocket::request::{self, FromRequest, Request};
 use rocket::{Outcome, State};
@@ -66,7 +67,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for Auth {
                 }
             }
             Err(_) => {
-                eprintln!("Cannot get Db socket conn from pool");
+                error!("Cannot get Db socket conn from pool");
                 Outcome::Failure((Status::Unauthorized, ApiKeyError::Missing))
             }
         }
@@ -80,7 +81,7 @@ pub fn extract_auth_from_request(request: &Request, conn: db::Conn) -> Option<Au
         let auth_record: AuthQ = match q {
             Ok(x) => x,
             Err(err) => {
-                eprintln!("get auth failed for token {}; {}", rcvd_token, err);
+                warn!("get auth failed for token {}; {}", rcvd_token, err);
                 return None;
             }
         };
@@ -104,11 +105,11 @@ pub fn extract_auth_from_request(request: &Request, conn: db::Conn) -> Option<Au
 fn is_expired_token(auth: &AuthQ) -> bool {
     let now = get_now!();
     if now <= auth.exp {
-        // eprintln!("Token still valid: {} >= {} ({})", auth.exp, now,
+        // debug!("Token still valid: {} >= {} ({})", auth.exp, now,
         //           (now <= auth.exp));
         return true;
     }
-    // eprintln!("Token has expired: {} >= {} ({})", auth.exp, now,
+    // debug!("Token has expired: {} >= {} ({})", auth.exp, now,
     //           (now <= auth.exp));
     false
 }
@@ -116,7 +117,7 @@ fn is_expired_token(auth: &AuthQ) -> bool {
 pub fn save_auth_token(conn: db::Conn, auth: &Auth) -> Result<(), &str> {
     let insert_res = diesel::insert_into(userauth::table).values(auth).execute(&*conn);
     if let Err(DatabaseError(DatabaseErrorKind::UniqueViolation, _)) = insert_res {
-        eprintln!("auth:save_auth_token Error saving token (Uniqueviolation)");
+        error!("auth:save_auth_token Error saving token (Uniqueviolation)");
         return Err("auth:save_auth_token Error saving token (Uniqueviolation)");
     }
 
@@ -127,7 +128,7 @@ pub fn save_auth_token(conn: db::Conn, auth: &Auth) -> Result<(), &str> {
         .order(userauth::exp.asc())
         .load(&*conn)
         .expect(&format!("error getting token count for user id {}", auth.user_id));
-    // eprintln!("For user id {} found {} tokens", auth.user_id, auth_tokens.len());
+    // debug!("For user id {} found {} tokens", auth.user_id, auth_tokens.len());
     trim_tokens(conn, auth.user_id, auth_tokens)?;
     Ok(())
 }
