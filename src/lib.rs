@@ -45,7 +45,7 @@ pub fn runner(_env: Environment) -> Result<rocket::Rocket, String> {
 
     let static_assets_dir =
         env::var("STATIC_ASSETS_DIR").expect("Missing STATIC_ASSETS_DIR env var");
-    debug!("Static assets dir; {}", static_assets_dir);
+    debug!("Static assets dir: {}", static_assets_dir);
     let rocket = rocket::ignite()
         // mount the routes
         .mount("/static", StaticFiles::from(static_assets_dir))

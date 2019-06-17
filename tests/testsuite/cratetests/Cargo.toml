@@ -11,35 +11,13 @@ path = "lib.rs"
 
 [dependencies]
 open-taffeta = { path = "../../.." }
-#rocket = { version = "0.4.1", features = ["tls"] }
-#rocket_cors = "0.5.0"
-
-# validation for input struct deserialized
-#validator = "0.8.0"
-#validator_derive = "0.8.0"
-
 diesel = { version = "1.4.2", features = ["chrono", "sqlite", "r2d2"] }
-
 serde = "1.0.92"
 serde_derive = "1.0.92"
 serde_json = "1.0.39"
-
-#env_logger = "0.6.1"
-#log = "0.4.6"
-#dotenv = "0.14.1"
-#dotenv_codegen = "0.14.1"
 chrono = { version = "0.4.6", features = ["serde"] }
 reqwest = "0.9.18"
 rand = "0.6.5"
-#audit = "0.1.1"
-#openssl-sys = "0.9.47"
-#sha1 = "0.6.0"
-#crypto-hash = "0.3.3"
-
-#[dependencies.rocket_contrib]
-#version = "0.4.1"
-#default-features = false
-#features = ["json", "serve", "tera_templates"]
 
 # https://vfoley.xyz/rust-compile-speed-tips/#avoid-lto
 [profile.dev]

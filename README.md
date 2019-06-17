@@ -73,6 +73,9 @@ Application and every (!) library (don't do this):
 Whole Open-Taffeta application:
 `RUST_LOG=open_taffeta_lib=debug cargo run`
 
+Whole Open-Taffeta and Rocket INFO:
+`RUST_LOG=rocket::rocket=INFO,open_taffeta_lib=debug cargo run`
+
 DB module only:
 `RUST_LOG=open_taffeta_lib::db=debug cargo run`
 

@@ -6,6 +6,8 @@ WorkingDirectory=/etc/open-taffeta
 EnvironmentFile=/etc/open-taffeta/settings
 Environment=RUST_BACKTRACE=1
 Environment=ROCKET_ENV=prod
+Environment=RUST_LOG=rocket::rocket=INFO
+Environment=open_taffeta_lib=debug
 ExecStart=/usr/bin/open-taffeta
 Restart=always
 
