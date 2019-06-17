@@ -22,7 +22,6 @@ assets = [
     ["Rocket.toml","etc/open-taffeta/Rocket.toml","644"],
     ["templates/","etc/open-taffeta/templates/","644"],
     ["static/","etc/open-taffeta/static/","644"]
-
 ]
 
 [package.metadata.deb.variants.x86]
