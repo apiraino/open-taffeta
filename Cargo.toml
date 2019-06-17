@@ -22,7 +22,6 @@ assets = [
     ["Rocket.toml","etc/open-taffeta/Rocket.toml","644"],
     ["templates/","etc/open-taffeta/templates/","644"],
     ["static/","etc/open-taffeta/static/","644"]
-
 ]
 
 [package.metadata.deb.variants.x86]
@@ -61,17 +60,13 @@ cratetests = { path = "tests/testsuite/cratetests", version = "0.1" }
 [dependencies]
 rocket = { version = "0.4.1", features = ["tls"] }
 rocket_cors = "0.5.0"
-
 # validation for input struct deserialized
 validator = "0.8.0"
 validator_derive = "0.8.0"
-
 diesel = { version = "1.4.2", features = ["chrono", "sqlite", "r2d2"] }
-
 serde = "1.0.92"
 serde_derive = "1.0.92"
 serde_json = "1.0.39"
-
 env_logger = "0.6.1"
 log = "0.4.6"
 dotenv = "0.14.1"

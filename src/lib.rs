@@ -4,10 +4,17 @@
 #![feature(custom_attribute)]
 #![feature(proc_macro_hygiene, decl_macro)]
 
+use log::debug;
+use std::env;
+
 #[macro_use]
 extern crate rocket;
 #[macro_use]
 extern crate diesel;
+
+use rocket::config::Environment;
+use rocket_contrib::serve::StaticFiles;
+use rocket_contrib::templates::Template;
 
 // ensure macros are imported before
 // any modules that might use them
@@ -25,11 +32,6 @@ pub mod routes;
 pub mod schema;
 pub mod serializers;
 
-use rocket::config::Environment;
-use rocket_contrib::serve::StaticFiles;
-use rocket_contrib::templates::Template;
-use std::env;
-
 pub fn runner(_env: Environment) -> Result<rocket::Rocket, String> {
     let pool = db::init_pool();
 
@@ -43,6 +45,7 @@ pub fn runner(_env: Environment) -> Result<rocket::Rocket, String> {
 
     let static_assets_dir =
         env::var("STATIC_ASSETS_DIR").expect("Missing STATIC_ASSETS_DIR env var");
+    debug!("Static assets dir: {}", static_assets_dir);
     let rocket = rocket::ignite()
         // mount the routes
         .mount("/static", StaticFiles::from(static_assets_dir))

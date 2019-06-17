@@ -1,14 +1,9 @@
+use dotenv;
+use env_logger;
+use rocket::config::Environment;
 use std::env;
 
-// extern crate env_logger;
-// #[macro_use]
-// extern crate log;
-
-use rocket::config::Environment;
-
-extern crate dotenv;
-
-extern crate open_taffeta_lib;
+use open_taffeta_lib;
 
 fn main() {
     // Load env vars
@@ -22,8 +17,7 @@ fn main() {
         _ => Environment::Development,
     };
 
-    // TODO: fix logging
-    // env_logger::init();
+    env_logger::init();
 
     let runner = open_taffeta_lib::runner(env).unwrap();
     // 🚀  Rocket has launched

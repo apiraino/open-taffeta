@@ -1,3 +1,4 @@
+use log::{debug, error};
 use std::env;
 use std::ops::Deref;
 
@@ -5,13 +6,12 @@ use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
 use diesel::sqlite::SqliteConnection;
 
-use crate::schema::{roles, users};
-
 use rocket::http::Status;
 use rocket::request::{self, FromRequest};
 use rocket::{Outcome, Request, State};
 
 use crate::models::{Role, RoleNew, User};
+use crate::schema::{roles, users};
 use crate::serializers::user::UserBaseResponse;
 use crate::utils;
 
@@ -22,9 +22,9 @@ use crate::utils;
 pub type SqlitePool = Pool<ConnectionManager<SqliteConnection>>;
 
 pub fn init_pool() -> SqlitePool {
-    let manager = ConnectionManager::<SqliteConnection>::new(
-        env::var("DATABASE_URL").expect("DATABASE_URL env var"),
-    );
+    let db_url = env::var("DATABASE_URL").expect("DATABASE_URL env var");
+    debug!("DB initialized from url: {}", db_url);
+    let manager = ConnectionManager::<SqliteConnection>::new(db_url);
     Pool::new(manager).expect("db pool")
 }
 
@@ -163,7 +163,7 @@ pub fn get_role(conn: &SqliteConnection, user_id: i32) -> Role {
 
 pub fn add_role(conn: &SqliteConnection, role_data: RoleNew) -> Option<Role> {
     if let Err(err) = diesel::insert_into(roles::table).values(&role_data).execute(conn) {
-        eprintln!("Role insert failed: {}", err);
+        error!("Role insert failed: {}", err);
         return None;
     }
     Some(get_role(conn, role_data.user.unwrap()))

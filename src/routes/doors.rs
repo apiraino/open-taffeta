@@ -1,6 +1,8 @@
 #![allow(proc_macro_derive_resolution_fallback)]
+
 use diesel::prelude::*;
 use diesel::result::DatabaseErrorKind;
+use log::debug;
 use reqwest::{Client, Url};
 use rocket_contrib::json;
 use rocket_contrib::json::{Json, JsonValue};
@@ -54,11 +56,11 @@ fn buzz(challenge: String, door_buzzer_url: String) -> Result<String, String> {
         Ok(x) => x,
         Err(err) => return Err(format!("Response data is broken: {:?}", err)),
     };
-    eprintln!("Buzz returned: {}", res.message);
+    debug!("Buzz returned: {}", res.message);
 
     match res.status {
         400..=500 => return Err(format!("Got error code: {}", res.status)),
-        200 => eprintln!("OK"),
+        200 => debug!("OK"),
         _ => (),
     };
 
@@ -83,11 +85,11 @@ pub fn get_challenge<'a>(door_buzzer_url: &'a str) -> Result<String, String> {
 
     match challenge.status {
         400..=500 => return Err(format!("Got error code: {}", challenge.status)),
-        200 => eprintln!("Got challenge, OK"),
+        200 => debug!("Got challenge, OK"),
         _ => (),
     };
 
-    eprintln!("Got status {} challenge {}", challenge.status, challenge.message);
+    debug!("Got status {} challenge {}", challenge.status, challenge.message);
     Ok(challenge.message)
 }
 
@@ -104,7 +106,7 @@ pub fn create_door(
     let new_door = NewDoor {
         name: door_data.name,
         address: door_data.address,
-        buzzer_url: door_data.buzzer_url
+        buzzer_url: door_data.buzzer_url,
     };
 
     // TODO: also try `get_result()` here
@@ -114,9 +116,9 @@ pub fn create_door(
     if let Err(diesel::result::Error::DatabaseError(DatabaseErrorKind::UniqueViolation, _)) =
         insert_result
     {
-        eprintln!(">>> door with name {} already exist", &new_door.name);
+        debug!("Door with name {} already exist", &new_door.name);
     } else {
-        eprintln!(">>> door with name {} created", &new_door.name);
+        debug!("Door with name {} created", &new_door.name);
     }
     // TODO: remove this panic
     let door: Door = doors
@@ -172,7 +174,7 @@ pub fn buzz_door(conn: db::Conn, _auth: Auth, _user: User, door_id: i32) -> APIR
                 get_challenge(&door_data.buzzer_url).expect("Failed to get the challenge");
 
             let buzz_result = buzz(challenge, door_data.buzzer_url).expect("Could not buzz door");
-            eprintln!(">>> Buzz result is: {}", buzz_result);
+            debug!("Buzz result is: {}", buzz_result);
             // TODO: here better a 204
             let resp_data = json!({
                 "status": "OK",

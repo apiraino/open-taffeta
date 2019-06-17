@@ -10,6 +10,8 @@ use rocket_contrib::templates::Template;
 
 use serde_derive::Serialize;
 
+use log::{debug, error, warn};
+
 use crate::auth::cookie::AdminCookie;
 use crate::config;
 use crate::crypto;
@@ -88,15 +90,15 @@ pub fn admin_panel_post_login(
                     }
                 }
                 Err(_) => {
-                    // eprintln!(">>> query failed {:?}", err);
+                    // error!(">>> query failed {:?}", err);
                 }
             };
         }
         Err(FormDataError::Io(_)) => {
-            eprintln!("Form input was invalid UTF-8.");
+            error!("Form input was invalid UTF-8.");
         }
         Err(FormDataError::Malformed(f)) | Err(FormDataError::Parse(_, f)) => {
-            eprintln!("Invalid form input: {}", f);
+            error!("Invalid form input: {}", f);
         }
     }
     retval
@@ -105,7 +107,7 @@ pub fn admin_panel_post_login(
 #[get("/admin/users")]
 pub fn admin_panel(conn: db::Conn, admin: AdminCookie) -> Template {
     let users = db::get_user_list(&conn, false).expect("Could not get users list");
-    eprintln!("Found {} users", users.len());
+    debug!("Found {} users", users.len());
     generate_template("User List", users, admin.user_id, "Click a checkbox to update users")
 }
 
@@ -134,10 +136,10 @@ pub fn admin_panel_edit_user(
         }
         Err(FormDataError::Io(_)) => {
             msg = "Form edit user has invalid UTF-8";
-            eprintln!("{}", msg);
+            warn!("{}", msg);
         }
         Err(FormDataError::Malformed(f)) | Err(FormDataError::Parse(_, f)) => {
-            eprintln!("Invalid form edit user received: {}", f);
+            warn!("Invalid form edit user received: {}", f);
             msg = "Invalid form edit user received";
         }
     }

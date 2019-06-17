@@ -63,6 +63,22 @@ or
 
 `cargo run`
 
+with different logging enabled:
+
+#### Logging levels:
+
+Application and every (!) library (don't do this):
+`RUST_LOG=debug cargo run`
+
+Whole Open-Taffeta application:
+`RUST_LOG=open_taffeta_lib=debug cargo run`
+
+Whole Open-Taffeta and Rocket INFO:
+`RUST_LOG=rocket::rocket=INFO,open_taffeta_lib=debug cargo run`
+
+DB module only:
+`RUST_LOG=open_taffeta_lib::db=debug cargo run`
+
 ### Deployment instructions
 
 #### Install Rust nightly

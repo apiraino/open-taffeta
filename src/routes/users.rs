@@ -2,6 +2,7 @@
 
 use diesel::prelude::*;
 use diesel::result::DatabaseErrorKind;
+use log::{debug, warn};
 
 use rocket_contrib::json;
 // https://mozilla.logbot.info/rocket/20181211#c15708806
@@ -125,7 +126,7 @@ pub fn login_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIRespon
             }
         }
         Err(err) => {
-            eprintln!(
+            warn!(
                 "{}",
                 &format!("Could not retrieve valid user with email {:?}: {}", logmein.email, err)
             );
@@ -164,7 +165,7 @@ pub fn login_user(conn: db::Conn, user_data: Json<UserLoginSignup>) -> APIRespon
             ok().data(json!(resp_data))
         }
         _ => {
-            eprintln!(
+            warn!(
                 "{}",
                 format!(
                     "Wrong records count found ({}) for email={}",
@@ -263,7 +264,7 @@ pub fn edit_user(
             return bad_request().data(resp_data);
         }
         Ok(_) => {
-            eprintln!("Profile update successful for user {}", user_id);
+            debug!("Profile update successful for user {}", user_id);
         }
     }
     no_content()
