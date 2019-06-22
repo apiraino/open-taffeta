@@ -2,8 +2,8 @@ use std::{thread, time};
 extern crate open_taffeta_lib;
 extern crate reqwest;
 
-use cratetests::common::dbstate::DbState;
 use cratetests::common;
+use cratetests::common::dbstate::DbState;
 
 use open_taffeta_lib::models::*;
 
@@ -86,7 +86,8 @@ fn test_door_delete() {
 }
 
 // TODO: mock this test
-// #[test]
+#[test]
+#[ignore]
 fn test_door_buzz() {
     let state = DbState::new();
     let (_, _, token_user) = common::signup_user(&state.conn, "josh@domain.com", true, ROLE_USER);
